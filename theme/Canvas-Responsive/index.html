@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+    <meta name="viewport" content="width=device-width" />
+    <meta name="Description" content="Canvas Theme">
+    <meta name="author" content="CoffeeCup Software, Inc.">
+    <meta name="Copyright" content="Copyright (c) 2010 CoffeeCup, all rights reserved.">
+    <title>Canvas Website Theme - Home</title>
+    <link rel="stylesheet" href="stylesheets/default.css" />
+    <!--[if IE]> 
+    <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+</head>
+<body>
+<span id = "cssHoverButton"></span>
+<span id = "cssActiveButton"></span>
+    <section id="mainRight" class="clear">
+        <header id="header">
+            <h1><span>Short Description or Tagline.</span></h1>
+        </header>
+        <nav id="nav">
+			<ul id="mainmenu" class="mainnavigation_menuone" style="border:4px dotted #efefef;display: none">
+				<li class="main_menuone_a main_menuone_1" id="main_menuone_1" >
+					<a style="positoion: relative;" class="main_menuone_a_a" href="#" id="main_menuone_1_a_a" onclick="parent.showMenuAction('main_menuone_1');" onmouseover="parent.changeAllStyleActive('main_menuone_1');">
+						<span class="icon_menu_handle">&nbsp;</span>
+						<span class = "text_menu_link">Home</span>&nbsp;
+					</a>
+                 	<input id="exist_main_menuone_1" type="hidden" name="exist_main_menuone_1" value="0"></li>
+				<li class="main_menuone_a main_menuone_2" id="main_menuone_2" >
+					<a style="positoion: relative;" class="main_menuone_a_a" href="#" id="main_menuone_2_a_a" onclick="parent.showMenuAction('main_menuone_2');" onmouseover="parent.changeAllStyleActive('main_menuone_2');">
+						<span class="icon_menu_handle">&nbsp;</span>
+						<span class = "text_menu_link">Services</span>&nbsp;
+					</a>
+                    <input id="exist_main_menuone_2" type="hidden" name="exist_main_menuone_2" value="0"></li>
+				<li class="main_menuone_a main_menuone_3" id="main_menuone_3" >
+					<a style="positoion: relative;" class="main_menuone_a_a" href="#" id="main_menuone_3_a_a" onclick="parent.showMenuAction('main_menuone_3');" onmouseover="parent.changeAllStyleActive('main_menuone_3');">
+						<span class="icon_menu_handle">&nbsp;</span>
+						<span class = "text_menu_link">About</span>&nbsp;
+					</a>
+                    <input id="exist_main_menuone_3" type="hidden" name="exist_main_menuone_3" value="0"></li>
+				<li class="main_menuone_a main_menuone_4" id="main_menuone_4" >
+					<a style="positoion: relative;" class="main_menuone_a_a" href="#" id="main_menuone_4_a_a" onclick="parent.showMenuAction('main_menuone_4');" onmouseover="parent.changeAllStyleActive('main_menuone_4');">
+						<span class="icon_menu_handle"></span>
+						<span class = "text_menu_link">Contact</span>&nbsp;
+					</a>
+                    <input id="exist_main_menuone_4" type="hidden" name="exist_main_menuone_4" value="0"></li>
+			</ul>                
+                
+			<ul id="mainmenu_preview" class="mainnavigation_menuone">
+				<li class="main_menuone_a">
+					<a style="positoion: relative;" class="main_menuone_a_a" href="#">
+						<span class="icon_menu_handle">&nbsp;</span>
+						<span class = "text_menu_link">Home</span>&nbsp;
+					</a>
+                                </li>
+				<li class="main_menuone_a" >
+					<a style="positoion: relative;" class="main_menuone_a_a" href="#" >
+						<span class="icon_menu_handle">&nbsp;</span>
+						<span class = "text_menu_link">Services</span>&nbsp;
+					</a>
+                                </li>
+				<li class="main_menuone_a" >
+					<a style="positoion: relative;" class="main_menuone_a_a" href="#" >
+						<span class="icon_menu_handle">&nbsp;</span>
+						<span class = "text_menu_link">About</span>&nbsp;
+					</a>
+                                </li>
+				<li class="main_menuone_a" >
+					<a style="positoion: relative;" class="main_menuone_a_a" href="#" >
+						<span class="icon_menu_handle"></span>
+						<span class = "text_menu_link">Contact</span>&nbsp;
+					</a>
+                                </li>
+			</ul>                  
+                
+          </nav>
+		<img src="images/banner.png" width="100%" alt="" border="0">
+        <section class="index">
+            <div class="colLeft">
+                <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ut enim ad minim veniam, quis nostrud exertion ullamco laboris nisi ut aliquip ex. Duis aute in voltate velit esse cillum dolore eu fugiat nulla pariatur reprehenderit.</p>
+                <p>Duis aute irure dolor in reprehenderit in voltate velit esse cillum dolore eu fugiat nulla pariatur.</p>
+                <a class="more" href="services.html">Read More</a>
+            </div>
+            <div class="colRight">
+                <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Duis aute irure dolor in reprehenderit in voltate velit esse cillum dolore eu fugiat nulla pariatur anim id est laborum.</p>
+                <a class="more" href="services.html">Read More</a>
+            </div>
+        </section>
+        <!-- end columns -->
+        <footer>
+		        <h5 id="signature">Canvas Website | CoffeeCup Software</h5>
+            <p>&copy; 2011 Canvas, Inc. All rights reserved.</p>
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="services.html">Services</a></li>
+                <li><a href="about.html">About</a></li>
+                <li><a href="contact.html">Contact</a></li>
+            </ul>
+            <div style = "display:none;" id = "cssHandle" >
+            	<ul id = "ulHandle" >
+            	<li id = "liHandle"><a id = "ahrefHandleHover">&nbsp;</a><a id = "ahrefHandleActive">&nbsp;</a><a id = "ahrefHandleVisited">&nbsp;</a></li>
+            	<li id = "liHandleCssIcon"><a id = "ahrefHandleIconHover">&nbsp;</a><a id = "ahrefHandleIconActive">&nbsp;</a><a id = "ahrefHandleIconVisited">&nbsp;</a></li>
+            	<li id = "liTyebuttonHandlehoover"><a>&nbsp;</a><a id = "TyebuttonHandleActive">&nbsp;</a></li>
+            	</ul>
+            </div>
+        </footer>
+    </section>
+    <!-- end mainRight -->
+    <div id="logoTxt">
+        <h1><span></span></h1>
+        <h2><span></span></h2>
+    </div>
+</body>
+</html>
