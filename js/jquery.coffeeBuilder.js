@@ -1063,41 +1063,6 @@ CoffeeBuilderControl.prototype = {
       });
     }
     
-  
-  , deleteIcon: function() {
-      var self = this;
-  
-      $.each(this.manifest.selectors, function(selector, properties){
-        var element = self.builder.$contents.find(selector);
-
-        var btnId = element.nextAll('span:first').attr("id");
-        if(btnId == 'buttonIcon')
-    	{
-    	    element.nextAll('span:first').remove();
-    	}
-      });
-    }
-    
-  
-  , setImagePosition: function(position, value) {
-      var self = this;
-  
-      $.each(this.manifest.selectors, function(selector, properties){
-        var element = self.builder.$contents.find(selector);
-
-        	if(position == 'left')
-        		{
-        			element.css('left','auto');
-        		}
-        	else if(position=='right')
-        		{
-        			element.css('right','auto');
-        		}
-        	
-    
-       // element.css(position,value);
-      });
-    }
     /**
      * Given a jQuery element, checks if this control has fields that are meant 
      * to manage that element.
@@ -1224,14 +1189,6 @@ CoffeeBuilderControl.prototype = {
         field.change();
       });
     }
-    /**
-     * Updates the link for the DOM element managed by the current control.
-     *  @param string newvalue The new link value.
-     *  @reutrn void
-     */
-    , updateLinkElement: function(newvalue) {
-        this.getElement().attr('href',newvalue);
-    }    
 };
 
 /**
@@ -1409,12 +1366,12 @@ CoffeeBuilderControls.add('4_sided_sizer', {
     
       // Set the element
       self.$element = $(
-    		   '<label class="label_grouped_main"><span class="primary_left"></span><input class="input_right sizerm" type="spin" min="0" max="100"></label>' +
-    	          '<label class="label_grouped"><input class="input_right sizerm" type="spin" min="0" max="100"></label>' +
-    	          '<label class="label_grouped"><input class="input_right sizerm" type="spin" min="0" max="100"></label>' +
-    	          '<label class="label_grouped "><input class="input_right sizerm" type="spin" min="0" max="100"></label>' +
-    	          '<span class="primary_left"></span><span class="input_right sizer_label">Top</span><span class="sizer_label">Right</span><span class="sizer_label">Bottom</span><span class="sizer_label">Left</span>'
-   );
+        '<label class="label_input_grouped"><span class="primary_left"></span><input class="input_right sizer" type="number" min="0" max="100"></label>' +
+        '<label class="label_input_grouped"><input class="input_right sizer" type="number" min="0" max="100"></label>' +
+        '<label class="label_input_grouped"><input class="input_right sizer" type="number" min="0" max="100"></label>' +
+        '<label class="label_input_grouped"><input class="input_right sizer" type="number" min="0" max="100"></label>' +
+        '<span class="sizer_label">Top</span><span class="sizer_label">Right</span><span class="sizer_label">Bottom</span><span class="sizer_label">Left</span>'
+      );
       
       // Set the fields
       $.each(['top','right','bottom','left'], function(index, side){
@@ -1422,7 +1379,7 @@ CoffeeBuilderControls.add('4_sided_sizer', {
         property = selector.property + '-' + side;
         size = self.getCss(property) || 0;
         
-        self.fields[property] = self.$element.eq(index).find('input.sizerm')
+        self.fields[property] = self.$element.eq(index).find('input.sizer')
           .data('builder-property', property)
           .val(parseInt(size, 10))
           .change($.proxy(self.sizeChange, self))
@@ -1555,17 +1512,17 @@ CoffeeBuilderControls.add('border', {
       // Set the element
       self.$element = $(
         '<label class="label_grouped_main"><span class="primary_left"></span><select class="combo_right combo_font select_field">' + styles + '</select></label>' +
-        '<label class="label_grouped"><input type="spin" class="input_right sizerm" type="text" min="0" max="20" value="13" maxlength="2"></label>' +
+        '<label class="label_grouped"><input class="input_right size_field combo_color_and_size" type="text" min="0" max="20" value="13" maxlength="2"></label>' +
         '<label class="label_grouped"><input type="text" class="color_right color_picker"></label>'
       );
       
       // Set the title
-      this.$element.find('span:first').text(self.manifest.name);
+      this.$element.find('span:first').text(self.manifest.name + ':');
       
       // Set the fields
       self.fields = {
         style: this.$element.find('select').val(style),
-        width: this.$element.find('input.sizerm').val(parseInt(width, 10)),
+        width: this.$element.find('input.size_field').val(parseInt(width, 10)),
         color: this.$element.find('input.color_picker').val(color)
       };
       
@@ -1723,12 +1680,12 @@ CoffeeBuilderControls.add('shadow', {
       // Set the element
       self.$element = $(
         '<div class="control_group shadow_group">' +
-        ' <label class="label_input_grouped"><span class="primary_left_shadow section_head" style="width:104px"><input class="shadow_enabled shadow_checkbox" type="checkbox"></span></label>' +
+        ' <label class="label_input_grouped"><span class="primary_left section_head"><input class="shadow_enabled shadow_checkbox" type="checkbox"></span></label>' +
         ' <label class="label_input_grouped"><input type="text" class="color_right color_picker shadow_color" value="#777777"></label>' +
         ' <label class="label_input_grouped"><input class="input_right shadow_size shadow_opacity" type="text" value="90" min="0" max="100" maxlength="3"><span class="shadow_text">%</span></label>' +
         ' <label class="label_input_grouped"><input class="input_right shadow_size shadow_x" type="text" value="2" min="0" max="10" maxlength="2"></label>' +
         ' <label class="label_input_grouped"><input class="input_right shadow_size shadow_y" type="text" value="2" min="0" max="10" maxlength="2"></label>' +
-        ' <label class="label_input_grouped"><input class="input_right shadow_size shadow_blur" type="text" value="5" min="0" max="10" maxlength="2"></label>' +       
+        ' <label class="label_input_grouped"><input class="input_right shadow_size shadow_blur" type="text" value="5" min="0" max="10" maxlength="2"></label>' +
         ' <span class="shadow_label first">Alpha</span><span class="shadow_label">X</span><span class="shadow_label">Y</span><span class="shadow_label">Blur</span>' +
         '</div>'
       );
@@ -1752,21 +1709,17 @@ CoffeeBuilderControls.add('shadow', {
           self.fields.opacity.val(Math.round((hexa.alpha ? hexa.alpha : 1) * 100));
         }
 
-        var match = shadow.match(/(\d+)px\s+(\d+)px\s+(\d+)px\s+(\d+)px\s+(\d+)px/);
+        var match = shadow.match(/(\d+)px\s+(\d+)px\s+(\d+)px\s+(\d+)px/);
         if(match)
         {
            self.fields.x.val(match[1]);
            self.fields.y.val(match[2]);
            self.fields.blur.val(match[3]);
-           self.fields.radius.val(match[4]);           
         }          
       }
+      
       // Add events
       self.fields.checkbox.change($.proxy(self.checkboxChange, self)).change();
-      // Add events-mode
-   
-       
-      
       CoffeeBuilderEvents.get('colorpicker_initialize')(self, self.fields.color, undefined, {}, $.proxy(self.shadowChange, self));
       $.each(self.fields, function(field_name, field) {
         if(field_name !== 'checkbox' && field_name !== 'color') {
@@ -1812,7 +1765,7 @@ CoffeeBuilderControls.add('shadow', {
      */      
   , checkboxChange: function(event) {
       return CoffeeBuilderEvents.get('shadow_checkbox')(this);      
-    }   
+    }
 });
 
 /**
@@ -2310,8 +2263,6 @@ CoffeeBuilderEvents.add('shadow_checkbox', function(control, property, callback)
   return checked ? CoffeeBuilderEvents.get('shadow_change')(control, property, callback) : control.updateCss(property, 'none');
 });
 
-
-
 /**
  * Initializes input sizers by adding the `oldvalue` data property which 
  * enables sizer controls to keep track of previous values in case validation 
@@ -2342,12 +2293,7 @@ CoffeeBuilderEvents.add('sizer_change', function(event, control, property, callb
     min = parseInt($field.attr('min'), 10),
     max = parseInt($field.attr('max'), 10),
     newvalue = $field.val();
-  if(newvalue > max){
-	  $field.val(max);
-  }
-  if(newvalue<min){
-	  $field.val(min);
-  }
+
   if(!/^\d+$/.test(newvalue)) {
     return CoffeeBuilderEvents.get('sizer_reset')(event, control, property, callback);
   }
@@ -2357,9 +2303,8 @@ CoffeeBuilderEvents.add('sizer_change', function(event, control, property, callb
     return CoffeeBuilderEvents.get('sizer_reset')(event, control, property, callback, 'The minimum allowed value is ' + min + '.');
   }
 
-  if(!isNaN(max) && newvalue > max) {         
-     return CoffeeBuilderEvents.get('sizer_reset')(event, control, property, callback, 'The maximum allowed value is ' + max + '.');
-     
+  if(!isNaN(max) && newvalue > max) {
+    return CoffeeBuilderEvents.get('sizer_reset')(event, control, property, callback, 'The maximum allowed value is ' + max + '.');
   }
 
   $field.data('oldvalue', newvalue);
@@ -2412,10 +2357,10 @@ CoffeeBuilderEvents.add('sizer_reset', function(event, control, property, callba
     oldvalue = $field.data('oldvalue') || parseInt(control.getCss(property), 10) || 0;
   
   if(typeof message === 'string') {
-    // alert(oldvalue+"trpo"+message);
-     return false;
+     alert(message);
   }
   
+  $field.val(oldvalue);
   return $.isFunction(callback) ? callback(oldvalue + 'px') : control.updateCss(property, oldvalue + 'px');  
 });
 /**

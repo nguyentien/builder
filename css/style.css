@@ -1,0 +1,25 @@
+.ui-widget {
+	font-family: lucida grande,helvetica,sans-serif;
+	font-size: inherit;
+}
+
+.help {
+	width: 14px !important;
+	height: 22px;
+	background: url(../images/glyphicons-halflings.png) -96px -225px;
+	cursor: pointer;
+}
+
+#popup span {
+	float: left;
+	margin: 0 7px 50px 0;
+}
+
+.dropzone {
+	height: 5px;
+}
+
+.ui-droppable {
+	display: block;
+	width: 100%;
+}
