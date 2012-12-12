@@ -24,7 +24,7 @@ CoffeeBuilderControls.add('size', {
      */      
   , init: function() {
       var 
-        options = this.manifest.options || [],
+        options = this.manifest.options || {},
         min = options.min || '0',
         max = options.max || '1000',
         value = this.getCss() || options['default'] || min;

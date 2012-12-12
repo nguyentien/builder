@@ -14,7 +14,7 @@ CoffeeBuilderEvents.add('border_lock', function(event, control){
   $.each(control.group.controls.keys, function(index, name) {
     var lock_control = control.group.controls.get(name);
 
-    $.each(['width','style','color'], function(index, field){
+    $.each(['style','width','color'], function(index, field){
 
       // Keep track of the first control in the group as it will serve as the
       // template for all other controls
@@ -52,7 +52,7 @@ CoffeeBuilderEvents.add('border_initialize', function(control){
     return;
   }
   
-  $.each(['width','style','color'], function(index, field){
+  $.each(['style','width','color'], function(index, field){
 
     // If the control field doesn't match the corresponding field from the
     // first control in the group, unlock the control and exit.

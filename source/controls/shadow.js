@@ -26,7 +26,7 @@ CoffeeBuilderControls.add('shadow', {
       var
         self = this,          
         shadow = self.getCss();
-        
+
       // Set the element
       self.$element = $(
         '<div class="control_group shadow_group">' +
@@ -36,8 +36,8 @@ CoffeeBuilderControls.add('shadow', {
         ' <label class="label_input_grouped"><input class="input_right shadow_size shadow_x" type="text" value="2" min="0" max="10" maxlength="2"></label>' +
         ' <label class="label_input_grouped"><input class="input_right shadow_size shadow_y" type="text" value="2" min="0" max="10" maxlength="2"></label>' +
         ' <label class="label_input_grouped"><input class="input_right shadow_size shadow_blur" type="text" value="5" min="0" max="10" maxlength="2"></label>' +
-        ' <span class="shadow_label first">Alpha</span><span class="shadow_label">X</span><span class="shadow_label">Y</span><span class="shadow_label">Blur</span>' +
-        '</div>'
+        '</div>' +
+        '<span class="shadow_label first">Alpha</span><span class="shadow_label">X</span><span class="shadow_label">Y</span><span class="shadow_label">Blur</span>'
       );
       
       // Set the fields
@@ -68,8 +68,11 @@ CoffeeBuilderControls.add('shadow', {
         }          
       }
       
-      // Add events
-      self.fields.checkbox.change($.proxy(self.checkboxChange, self)).change();
+      // Add checkbox events
+      self.fields.checkbox.change($.proxy(self.checkboxChange, self));
+      CoffeeBuilderEvents.get('shadow_checkbox')(self, null, function(){});
+      
+      // Add value events
       CoffeeBuilderEvents.get('colorpicker_initialize')(self, self.fields.color, undefined, {}, $.proxy(self.shadowChange, self));
       $.each(self.fields, function(field_name, field) {
         if(field_name !== 'checkbox' && field_name !== 'color') {

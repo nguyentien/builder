@@ -48,5 +48,9 @@ CoffeeBuilderEvents.add('shadow_checkbox', function(control, property, callback)
     }
   });
 
-  return checked ? CoffeeBuilderEvents.get('shadow_change')(control, property, callback) : control.updateCss(property, 'none');
+  if(checked) {
+    return CoffeeBuilderEvents.get('shadow_change')(control, property, callback);
+  }
+  
+  return $.isFunction(callback) ? callback('none') : control.updateCss(property, 'none');
 });

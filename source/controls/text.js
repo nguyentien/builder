@@ -19,18 +19,17 @@ CoffeeBuilderControls.add('text', {
      *
      * this.$element   // jQuery object for the entire control
      * this.fields     // hash of jQuery objects for all form fields in the control
-     * this.properties // (optional) CSS properties managed by the control
+     * this.props.css  // (optional) CSS properties managed by the control
      *
      * @return  void
      */      
   , init: function() {
-      var 
-        options = this.manifest.options || [],
+      var
         fonts = '',
         family = this.getCss('font-family') || 'Helvetica, Arial, sans-serif',
         size = this.getCss('font-size') || '13px',
         color = this.getCss('color') || '#000000',
-        $text = this.getElement();
+        $text = this.getElement(true);
 
       // Fonts list
       $.each({
@@ -60,7 +59,7 @@ CoffeeBuilderControls.add('text', {
       });
       
       // Set the CSS properties
-      this.properties = ['font-family','font-size','color'];
+      this.props.css = ['font-family','font-size','color'];
       
       // Set the element
       this.$element = $(
@@ -89,7 +88,7 @@ CoffeeBuilderControls.add('text', {
       // Add events
       if($text.length) {
 
-        this.fields.input.val($text.text()).change($.proxy(this.textChange, this)).keyup($.proxy(this.textChange, this));
+        this.fields.input.val($.trim($text.text())).change($.proxy(this.textChange, this)).keyup($.proxy(this.textChange, this));
         this.fields.family.change($.proxy(this.fontFamilyChange, this));
         
         CoffeeBuilderEvents.get('initialize_sizers')(

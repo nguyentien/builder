@@ -39,6 +39,15 @@ CoffeeBuilderControls.add('border', {
         width = self.getCss(selector.property + '-width') || '0',
         color = self.getCss(selector.property + '-color') || '#000000';
       
+      // Normalize named widths
+      $.each({thick: '6', medium: '4', thin: '2'}, function(name, value) {
+        if(width === name) {
+          width = value;
+          return false;
+        }
+      });
+
+      // Build the style options
       $.each({
         'None':   'none',
         'Dotted': 'dotted',
@@ -56,7 +65,7 @@ CoffeeBuilderControls.add('border', {
       // Set the element
       self.$element = $(
         '<label class="label_grouped_main"><span class="primary_left"></span><select class="combo_right combo_font select_field">' + styles + '</select></label>' +
-        '<label class="label_grouped"><input class="input_right size_field combo_color_and_size" type="text" min="0" max="20" value="13" maxlength="2">%</label>' +
+        '<label class="label_grouped"><input class="input_right size_field combo_color_and_size" type="text" min="0" max="20" value="13" maxlength="2"></label>' +
         '<label class="label_grouped"><input type="text" class="color_right color_picker"></label>'
       );
       
@@ -84,7 +93,7 @@ CoffeeBuilderControls.add('border', {
       if(self.group) {
         if(self.group.controls.length === 0) {
           self.locked = true;
-          self.$lock = $('<span class="starter_icon border_lock">').wrap('<label class="label_grouped">').click($.proxy(self.borderLock, self));
+          self.$lock = $('<span class="starter_icon border_lock"></span>').wrap('<label class="label_grouped">').click($.proxy(self.borderLock, self));
           this.$element = this.$element.add(self.$lock).find('span:first').prepend($('<b>').text(self.group.manifest.name + ' ')).end();
         } else {
           CoffeeBuilderEvents.get('border_initialize')(self);

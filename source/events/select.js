@@ -11,3 +11,12 @@ CoffeeBuilderEvents.add('select_change', function(event, control, property, call
   var newvalue = $(event.currentTarget).val();
   return $.isFunction(callback) ? callback(newvalue) : control.updateCss(property, newvalue);
 });
+
+CoffeeBuilderEvents.add('select_data', function(event, control, property, callback){
+  var 
+    newvalue = $(event.currentTarget).val(),
+    data = {};
+
+  data[property] = newvalue;
+  return $.isFunction(callback) ? callback(newvalue) : control.data(data);
+});

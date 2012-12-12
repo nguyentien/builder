@@ -20,7 +20,7 @@ CoffeeBuilderControls.add('4_sided_sizer', {
      *
      * this.$element   // jQuery object for the entire control
      * this.fields     // hash of jQuery objects for all form fields in the control
-     * this.properties // (optional) CSS properties managed by the control
+     * this.props.css  // (optional) CSS properties managed by the control
      *
      * @return  void
      */      
@@ -35,8 +35,8 @@ CoffeeBuilderControls.add('4_sided_sizer', {
       }
 
       // Set the element
-      self.$element = $('<div class="four_sided_container">');
-      self.$four_sided_labels= $('<div class="four_sided_labels">');
+      self.$element = $('<div class="four_sided_container clearfix">');
+      self.$four_sided_labels= $('<div class="four_sided_labels clearfix">');
       
       // Set the fields
       $.each(properties, function(index, side){
@@ -54,7 +54,7 @@ CoffeeBuilderControls.add('4_sided_sizer', {
         
         // Specify specific properties if necessary
         if(properties.length !== 4) {
-          self.properties.push(property);
+          self.props.css.push(property);
         }
         
         self.fields[property] = $field.find('input.sizer')

@@ -92,7 +92,7 @@ CoffeeBuilderEvents.add('sizer_reset', function(event, control, property, callba
     oldvalue = $field.data('oldvalue') || parseInt(control.getCss(property), 10) || 0;
   
   if(typeof message === 'string') {
-     //alert(message);
+     alert(message);
   }
   
   $field.val(oldvalue);

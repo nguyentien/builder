@@ -10,12 +10,16 @@
  */  
 CoffeeBuilderEvents.add('colorpicker_initialize', function(control, $input, property, options, callback){
   var
+    design_mode_disabled,
     value = $input.val() || '#000000',
     $picker = $('<div class="color_right fb-color-control"><div></div></div>').insertBefore($input).find('div').css('background-color', value);
 
   // Initialize the picker, merging the `options` parameter if necessary.
   $picker.ColorPicker(
     $.extend({
+        additionalDocuments: control.builder.$contents
+
+      , iframeFix: true
       
         /**
          * Change event for the colorpicker.
@@ -25,7 +29,7 @@ CoffeeBuilderEvents.add('colorpicker_initialize', function(control, $input, prop
          * @param   String rgb  New rgb value
          * @return  void
          */
-        onChange: function(hsb, hex, rgb) {
+      , onChange: function(hsb, hex, rgb) {
           CoffeeBuilderEvents.get('colorpicker_change')('#' + hex, control, $input, property, callback);
         }
         
@@ -36,27 +40,14 @@ CoffeeBuilderEvents.add('colorpicker_initialize', function(control, $input, prop
          * @return  void
          */          
       , onShow: function(picker) {
-          var design_mode_disabled;
-        
           // Show the picker if the input is not disabled
-          if(!$input.is(':disabled')) {
+          if(!$input.is(':disabled')) {            
             if(design_mode_disabled = control.builder.design_mode) {
               control.builder.toggleDesignMode(false);
             }
-            
-            // Clicking in the iframe should also close the picker
-            control.builder.$element.contents().click(function(event){
-              $(this).unbind(event);
-              $(window.document).mousedown();
-
-              if(design_mode_disabled) {
-                control.builder.toggleDesignMode(true);
-              }
-            });
-
-            $(picker).fadeIn(500);          
+      
+            $(picker).fadeIn(500);
           }
-          
           return false;
         }
         
@@ -67,7 +58,11 @@ CoffeeBuilderEvents.add('colorpicker_initialize', function(control, $input, prop
          * @return  void
          */       
       , onHide: function(picker) {
-          $(picker).fadeOut(500);
+          $(picker).fadeOut(500, function(){
+            if(design_mode_disabled) {
+              control.builder.toggleDesignMode(true);
+            }            
+          });
           return false;
         }
     }, options)
