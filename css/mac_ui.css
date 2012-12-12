@@ -53,7 +53,7 @@ body { overflow:hidden; -webkit-user-select:none; }
 #controls {
    position:absolute;
    right:0;
-   width:332px;
+   width:347px;
    background-color:rgb(237,237,237);
    overflow:hidden;
    top:0;

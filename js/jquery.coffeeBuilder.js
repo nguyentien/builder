@@ -1,11 +1,11 @@
 /**
- * CoffeeBuilder - v0.1.0 - 2012-10-16
+ * CoffeeBuilder - v0.1.3 - 2012-12-12
  * Copyright (c) 2006-2012  CoffeeCup Software, Inc. (http://www.coffeecup.com/)
  */
 
-//!function($, window, undefined){
+!function($, window, undefined){
 
-//'use strict';
+'use strict';
 
 /**
  * A collection is a generic object that has properties which can be referenced
@@ -24,16 +24,30 @@ CoffeeBuilderCollection.prototype = {
     /**
      * Adds a new item to the collection.
      *
-     * @param   String key   A unique key to identify the item
-     * @param   Object item  The object to store in the collection
+     * @param   String key       A unique key to identify the item
+     * @param   Object item      The object to store in the collection
+     * @param   Number position  Optional position for element in collection
      * @return  Object
      */
-  , add: function(key, item) {
+  , add: function(key, item, position) {
       if($.inArray(key, this.keys) !== -1) {
         $.error('Index already defined: ' + key);
       }
+      
+      if(position === undefined) {
+        position = this.length;
+      }
+      
+      if(position > this.length) {
+        $.error('Position is larger than collection length: ' + position);
+      }
     
-      this.keys.push(key);
+      if(position === this.length) {
+        this.keys.push(key);
+      } else {
+        this.keys.splice(position, 0, key);        
+      }     
+
       this.items[key] = item;
       this.length++;
 
@@ -45,10 +59,11 @@ CoffeeBuilderCollection.prototype = {
      *
      * @param   String|Number key  A string key or numeric index to idenfity the item.
      * @return  Object
-     */    
+     */
   , remove: function(key) {
-      var index = this.getIndex(key);
-      var deleted = this.items[index.named];
+      var
+        index = this.getIndex(key),
+        deleted = this.items[index.named];
 
       this.keys.splice(index.numeric,1);
       delete this.items[index.named];
@@ -92,7 +107,7 @@ CoffeeBuilderCollection.prototype = {
      * @return  String
      */    
   , getKeyForIndex: function(index) {
-      if(typeof index === 'number' && index === +index && index === (index|0) && index >= 0 && index < this.length) {
+      if(typeof index === 'number' && index === ~~index && index < this.length) {
         return this.keys[index];
       }
       
@@ -114,6 +129,217 @@ CoffeeBuilderCollection.prototype = {
       $.error('Invalid index provided: ' + key);
     }
 };
+/**
+ * Global notifications manager.
+ *
+ * Use `CoffeeBuilderControls.addObserver()` for adding observers to the
+ * notifications system and use `CoffeeBuilderControls.postNotification()`
+ * for notifying observers of an event.
+ *
+ * <code>
+ *
+ * var observer = function(x, y, width, height){
+ *   console.log('New rectangle drawn!');
+ *   console.log('x: ' + x);
+ *   console.log('y: ' + y);
+ *   console.log('width: ' + width);
+ *   console.log('height: ' + height);
+ * }
+ *
+ * CoffeeBuilderNotifications.addObserver('drawRect', observer);
+ * 
+ * function drawRect(x, y, width, height, color) {
+ *   var canvas = document.getElementById("canvas");
+ *   var ctx = canvas.getContext("2d");
+ * 
+ *   if(color){
+ *     ctx.fillStyle = color;
+ *   }
+ * 
+ *   ctx.fillRect (x, y, width, height);
+ *   CoffeeBuilderNotifications.postNotification('drawRect', x, y, width, height);
+ * }
+ * 
+ * drawRect(10, 10, 200, 200);
+ * drawRect(25, 25, 170, 170, "rgb(200,0,0)");
+ *
+ * CoffeeBuilderNotifications.removeObserver(observer);
+ *
+ * drawRect(50, 50, 120, 120, "rgb(0,0,200)");
+ *
+ * </code>
+ */
+var CoffeeBuilderNotifications = {
+    observerCollection: {}
+
+    /**
+     * Adds a new obvserver for a given notification type.
+     *
+     * @param   String name        The name of the notification type to observe.
+     * @param   Function observer  The function to call when the notification is posted.
+     * @return  void
+     */
+  , addObserver: function(name, observer){
+      if(!$.isFunction(observer)) {
+        $.error('observer must be a function');
+      }
+      
+      if(!$.isArray(this.observerCollection[name])) {
+        this.observerCollection[name] = [];
+      }
+      
+      this.observerCollection[name].push(observer);
+    }
+
+    /**
+     * Removes an obvserver from all notifications or a given notification type
+     * if the name parameter is provided.
+     *
+     * @param   String name        The name of the notification type to remove from.
+     * @param   Function observer  The function to remove.
+     * - OR -
+     * @param   Function observer  The function to remove from all notifications.
+     * 
+     * @return  void
+     */
+  , removeObserver: function(name, observer){
+      if(arguments.length === 1) {
+        var self = this;
+
+        observer = name;
+        $.each(this.observerCollection, function(name){
+          self.removeObserver(name, observer);
+        });
+
+        return;
+      }
+    
+      if(!$.isArray(this.observerCollection[name])) {
+        $.error('invalid observer: ' + name);
+      }
+
+      this.observerCollection[name] = $.grep(this.observerCollection[name], function(value){
+        return value !== observer;
+      });
+    }
+
+    /**
+     * Post a notification to all registered observers.
+     *
+     * @param   String name  The name of the notification type to post.
+     * @return  void
+     */
+  , postNotification: function(name){
+      if(!$.isArray(this.observerCollection[name])) {
+        return;
+      }
+    
+      var notification_arguments = Array.prototype.slice.call(arguments, 1);
+
+      $.each(this.observerCollection[name], function(index, observer){
+        observer.apply(null, notification_arguments);
+      });
+    }
+};
+
+/**
+ * A basic stylesheet representation.
+ *
+ * @return  void
+ */
+var CoffeeBuilderStylesheet = function(rules) {
+  this.rules = {};
+};
+CoffeeBuilderStylesheet.prototype = {
+    constructor: CoffeeBuilderStylesheet
+
+    /**
+     * Add a new rule to the stylesheet.
+     *
+     * @param   string selector  The CSS selector
+     * @param   string property  The CSS property
+     * @param   string selector  The CSS value
+     * @return  void
+     */
+  , addRule: function(selector, property, value) {
+      if(!this.rules.hasOwnProperty(selector)) {
+        this.rules[selector] = {};
+      }
+      
+      this.rules[selector][property] = value;
+    }
+
+    /**
+     * Merges the rules from another stylesheet object with the current one.
+     *
+     * @param   CoffeeBuilderStylesheet stylesheet  The other stylesheet object
+     * @return  void
+     */
+  , merge: function(stylesheet) {
+      $.extend(true, this.rules, stylesheet.getRules());
+    }
+
+    /**
+     * Removes a rule from the stylesheet.
+     *
+     * @param   string selector  The CSS selector
+     * @param   string property  The CSS property
+     * @return  void
+     */
+  , removeRule: function(selector, property) {
+      if(this.rules.hasOwnProperty(selector)) {
+        delete this.rules[selector][property];
+      }
+    }
+  
+    /**
+     * Removes all rules for a given selector.
+     *
+     * @param   string selector  The CSS selector
+     * @return  void
+     */
+  , removeRulesForSelector: function(selector) {
+      delete this.rules[selector];
+    }
+    
+    /**
+     * Clear all rules.
+     *
+     * @return  void
+     */
+  , clearRules: function() {
+      this.rules = {};
+    }    
+
+    /**
+     * Gets a plain object representation of all rules in the current 
+     * stylesheet.
+     *
+     * @return  Object
+     */
+  , getRules: function() {
+      return this.rules;
+    }
+  
+    /**
+     * Gets a string representation of all rules in the current stylesheet.
+     *
+     * @return  string
+     */  
+  , toString: function() {
+      var styles = '';
+      
+      $.each(this.rules, function(selector, properties){
+        styles += selector + '{' + "\n";
+        $.each(properties, function(property, value){
+          styles += '\t' + property + ':' + value + ';' + "\n";
+        });
+        styles += '}' + "\n";
+      });
+      
+      return $.trim(styles);
+    }
+};
 
 /**
  * The buider is the core component which holds all panels, sub panels, 
@@ -125,17 +351,14 @@ CoffeeBuilderCollection.prototype = {
  *
  * Valid options:
  * --------------
- *  .design_mode:  (Boolean) If the iframe should be in design mode at startup
+ *  .design_mode:  (Boolean) If the iframe should be in design mode at startup.
  *  .manifest:     (Object)  JSON structure that defines the panels and controls.
- *  .width:        (Number)  A pixel width for the controls
+ *  .width:        (Number)  A pixel width for the controls.
+ *  .data:         (Object)  JSON structure to hold some generic application-specific data.
  */
 var CoffeeBuilder = function($element, options) {
-
   // Builder options
-  this.options = options || {};
-  this.manifest = this.options.manifest || {};
-  this.width = this.options.width || 332;
-  this.design_mode = this.options.design_mode || false;
+  this.setOptions(options);
 
   // Panels
   this.panels = new CoffeeBuilderCollection();
@@ -148,6 +371,7 @@ var CoffeeBuilder = function($element, options) {
   this.$element = $element;
   this.$contents = this.$element.contents();
   this.$center = $('#layout-center');
+  this.$blocker = $('<div id="builder_blocker">');
 
   // Navigation
   this.$controls = $('<div class="ui-layout-east" id="controls">');
@@ -155,11 +379,7 @@ var CoffeeBuilder = function($element, options) {
   this.$switcher = $('<ul id="control_switcher">');
   this.$prev = $('<div id="control_prev">').click($.proxy(this, 'prev'));
   this.$next = $('<div id="control_next">').click($.proxy(this, 'next'));
-  
-  // Blocker to disable/enable panels
-  this.$blocker = $('<div id="builder_blocker">').css('width', this.width);
 
-  this.toggleDesignMode(this.design_mode);
   this.build();
 };
 CoffeeBuilder.prototype = {
@@ -179,18 +399,56 @@ CoffeeBuilder.prototype = {
         self.$controls.append(self[name]);
       });
 
-      // Add the controls
+      // Add the controls      
       $.each(['$controls','$blocker'], function(index, name){
         self.$center.after(self[name]);
       });
 
       // Add panels
+      self.buildIframe();
       self.addPanels();
+      self.data(this.options.data);
       
       // Add the resize event        
       $(window).resize($.proxy(self.windowResize, self)).resize();
       
       return self;
+    }
+    
+    /**
+     * Builds and adds the DOM elements that live in the `$element` iframe.
+     *
+     * @param   object options  A list of options
+     * @return  void
+     *
+     * Valid options:
+     * --------------
+     *  .design_mode:  (Boolean) If the iframe should be in design mode at startup
+     *  .manifest:     (Object)  JSON structure that defines the panels and controls.
+     *  .width:        (Number)  A pixel width for the controls
+     *  .data:         (Object)  JSON structure to hold some generic application-specific data.     
+     */    
+  , setOptions: function(options) {
+      this.options = options || {};
+      this.manifest = this.options.manifest || {};
+      this.width = this.options.width || 332;
+      this.design_mode = this.options.design_mode || false;
+      this.options.data = this.options.data || {};
+    }
+    
+    /**
+     * Builds and adds the DOM elements that live in the `$element` iframe.
+     *
+     * @return  void
+     */    
+  , buildIframe: function() {
+      this.$blocker.css('width', this.width);
+      this.$styles = $('<style id="coffeebuilder_styles">').appendTo(this.$contents.find('head'));      
+      this.toggleDesignMode(this.design_mode);
+    
+      // For mocking elements
+      this.put = put.forDocument(this.$contents.get(0));
+      this.$mock_area = $('<div id="coffee_mocker">').css({height: 0, overflow: 'hidden', position: 'absolute'}).appendTo(this.$contents.find('body'));    
     }
     
     /**
@@ -215,6 +473,74 @@ CoffeeBuilder.prototype = {
     }
     
     /**
+     * Returns a stylesheet representing all current customizations.
+     *
+     * @param   boolean full  If the full stylesheet (not just customizations) should be returned.     
+     * @return  string
+     */
+  , getStyleSheet: function(full) {
+      var stylesheet = new CoffeeBuilderStylesheet();
+      
+      $.each(this.panels.items, function(panel_name, panel){
+        stylesheet.merge(panel.getStyleSheet(full));
+      });
+      
+      return stylesheet;
+    }
+    
+    /**
+     * Returns a stylesheet representing all current customizations for a given
+     * panel.
+     *
+     * @param   string panel  The name of the panel to get the customizations for
+     * @param   boolean full  If the full stylesheet (not just customizations) should be returned.     
+     * @return  string
+     */
+  , getStyleSheetForPanel: function(panel, full) {
+      return this.panels.get(panel).getStyleSheet(full);    
+    }
+    
+    /**
+     * Returns a stylesheet representing all current customizations for a given
+     * panel's control.
+     *
+     * @param   string panel    The name of the panel where the control can be found
+     * @param   string control  The name of the control to get the customizations for
+     * @param   boolean full    If the full stylesheet (not just customizations) should be returned.     
+     * @return  string
+     */    
+  , getStyleSheetForPanelControl: function(panel, control, full) {
+      return this.panels.get(panel).getStyleSheetForControl(control, full);
+    }
+    
+    /**
+     * Returns a stylesheet representing all current customizations for a given
+     * panel's sub panel.
+     *
+     * @param   string panel      The name of the panel where the sub panel can be found
+     * @param   string sub_panel  The name of the sub_panel to get the customizations for
+     * @param   boolean full      If the full stylesheet (not just customizations) should be returned.     
+     * @return  string
+     */    
+  , getStyleSheetForSubPanel: function(panel, sub_panel, full) {
+      return this.panels.get(panel).getStyleSheetForPanel(sub_panel, full);
+    }
+    
+    /**
+     * Returns a stylesheet representing all current customizations for a given
+     * sub panel's control.
+     *
+     * @param   string panel      The name of the panel where the sub panel can be found
+     * @param   string sub_panel  The name of the sub panel where the control can be found
+     * @param   string control    The name of the control to get the customizations for
+     * @param   boolean full      If the full stylesheet (not just customizations) should be returned.     
+     * @return  string
+     */    
+  , getStyleSheetForSubPanelControl: function(panel, sub_panel, control, full) {
+      return this.panels.get(panel).getStyleSheetForPanelControl(sub_panel, control, full);
+    }
+    
+    /**
      * Used when the iframe is reloaded to update the DOM references.
      *
      * If the manifest parameter is provided, all panels and controls are 
@@ -223,12 +549,19 @@ CoffeeBuilder.prototype = {
      *
      * @param   Object manifest  JSON structure that defines the panels and controls.
      * @return  void
+     *
+     * Valid options:
+     * --------------
+     *  .design_mode:  (Boolean) If the iframe should be in design mode at startup
+     *  .manifest:     (Object)  JSON structure that defines the panels and controls.
+     *  .width:        (Number)  A pixel width for the controls
+     *  .data:         (Object)  JSON structure to hold some generic application-specific data.
      */      
-  , refresh: function(manifest) {
+  , refresh: function(options) {
       var self = this;
       
       self.$contents = self.$element.contents();
-      if(manifest === undefined) {
+      if(options === undefined) {
         self.change();
         return;
       }
@@ -236,8 +569,10 @@ CoffeeBuilder.prototype = {
       $.each(self.panels.items, function(panel_name, panel) {
         self.removePanel(panel_name);
       });
-      self.manifest = manifest;
+      self.setOptions(options);
+      self.buildIframe();
       self.addPanels();
+      self.data(this.options.data);
     }
     
     /**
@@ -356,6 +691,75 @@ CoffeeBuilder.prototype = {
      */    
   , addControlToSubPanel: function(panel, sub_panel, name, manifest) {
       this.panels.get(panel).addControlToPanel(this, sub_panel, name, manifest);
+    }
+    
+    /**
+     * Gets/Sets data object for all panels/controls.
+     *
+     * @param   Object data  The data object (optional, used for setting)
+     * @return  Object
+     */
+  , data: function(data) {
+      var writer = arguments.length > 0;
+      data = data || {};
+  
+      $.each(this.panels.items, function(panel_name, panel){
+        if(writer) {
+          panel.data(data);
+        } else {
+          $.extend(data, panel.data());
+        }
+      });
+  
+      return data;
+    }
+  
+    /**
+     * Gets/Sets data object for a given panel.
+     *
+     * @param   string panel  The name of the panel to get the data object for
+     * @param   Object data   The data object (optional, used for setting)
+     * @return  string
+     */
+  , dataForPanel: function(panel, data) {
+      return this.panels.get(panel).data(data);    
+    }
+  
+    /**
+     * Gets/Sets data object for a given panel's control.
+     *
+     * @param   string panel    The name of the panel where the control can be found
+     * @param   string control  The name of the control to get the customizations for
+     * @param   Object data     The data object (optional, used for setting)
+     * @return  string
+     */    
+  , dataForPanelControl: function(panel, control, data) {
+      return this.panels.get(panel).dataForControl(control, data);
+    }
+  
+    /**
+     * Gets/Sets data object for a given panel's sub panel.
+     *
+     * @param   string panel      The name of the panel where the sub panel can be found
+     * @param   string sub_panel  The name of the sub_panel to get the customizations for
+     * @param   Object data       The data object (optional, used for setting)
+     * @return  string
+     */    
+  , dataForSubPanel: function(panel, sub_panel, data) {
+      return this.panels.get(panel).dataForPanel(sub_panel, data);
+    }
+  
+    /**
+     * Gets/Sets data object for a given sub panel's control.
+     *
+     * @param   string panel      The name of the panel where the sub panel can be found
+     * @param   string sub_panel  The name of the sub panel where the control can be found
+     * @param   string control    The name of the control to get the customizations for
+     * @param   Object data       The data object (optional, used for setting) 
+     * @return  string
+     */    
+  , dataForSubPanelControl: function(panel, sub_panel, control, data) {
+      return this.panels.get(panel).dataForPanelControl(sub_panel, control, data);
     }
     
     /**
@@ -559,6 +963,25 @@ CoffeeBuilder.prototype = {
         self.$contents.find('*').unbind('click.coffeeBuilder');
       }
     }
+    
+    /**
+     * Given a selector, this will generate a hidden "mock element"
+     * in the iframe which satisfies the selector.
+     *
+     * @param   string selector The selector of the element to mock
+     * @return  void
+     */    
+  , mockElement: function(selector){
+      if(typeof selector !== "string" || selector.length === 0) {
+        return;
+      }
+
+      if($.inArray(selector.charAt(0), ['.','#','[', '!']) !== -1) {
+        selector = 'div' + selector;
+      }
+    
+      this.put(this.$mock_area.get(0), selector);
+    }
 };
 
 /**
@@ -654,8 +1077,12 @@ CoffeeBuilderPanel.prototype = {
      * @param   Object manifest        A JSON manifest that defines the control
      * @return  void
      */
-  , addControl: function(builder, name, manifest) {      
-      this.controls.add(name, CoffeeBuilderControls.get(builder, this, name, manifest).build());
+  , addControl: function(builder, name, manifest) {
+      if(typeof manifest === "object" && typeof manifest.position === "number" && manifest.position < this.controls.length) {
+        this.controls.add(name, CoffeeBuilderControls.get(builder, this, name, manifest).build(this.controls.get(manifest.position).$element), manifest.position);        
+      } else {
+        this.controls.add(name, CoffeeBuilderControls.get(builder, this, name, manifest).build());
+      }
     }
     
     /**
@@ -709,6 +1136,78 @@ CoffeeBuilderPanel.prototype = {
         panel.change();
       });
     }
+  
+    /**
+     * Returns a stylesheet representing all current customizations.
+     *
+     * @param   boolean full  If the full stylesheet (not just customizations) should be returned.
+     * @return  string
+     */
+  , getStyleSheet: function(full) {
+      var stylesheet = new CoffeeBuilderStylesheet();
+  
+      $.each(this.controls.items, function(control_name, control){
+        stylesheet.merge(control.getStyleSheet(full));
+      });
+      
+      $.each(this.panels.items, function(panel_name, panel){
+        stylesheet.merge(panel.getStyleSheet(full));
+      });
+  
+      return stylesheet;
+    }
+    
+    /**
+     * Gets/Sets data object for all panels/controls.
+     *
+     * @param   Object data  The data object (optional, used for setting)
+     * @return  Object
+     */
+  , data: function(data) {
+      var writer = arguments.length > 0;
+      data = data || {};
+  
+      $.each(this.controls.items, function(control_name, control){
+        if(writer) {
+          control.data(data);
+        } else {
+          $.extend(data, control.data());
+        }
+      });
+      
+      $.each(this.panels.items, function(panel_name, panel){
+        if(writer) {
+          panel.data(data);
+        } else {
+          $.extend(data, panel.data());
+        }
+      });
+  
+      return data;
+    }
+    
+    /**
+     * Returns a stylesheet representing all current customizations for a given
+     * control.
+     *
+     * @param   string control  The name of the control to get the customizations for
+     * @param   boolean full    If the full stylesheet (not just customizations) should be returned.     
+     * @return  string
+     */    
+  , getStyleSheetForControl: function(control, full) {
+      return this.controls.get(control).getStyleSheet(full);
+    }
+    
+    /**
+     * Gets/Sets data object for a given control.
+     *
+     * @param   string control  The name of the control to get the customizations for
+     * @param   Object data     The data object (optional, used for setting)
+     * @return  string
+     */    
+  , dataForControl: function(control, data) {
+      return this.controls.get(control).data(data);
+    }    
   
     /**
      * Activates this panel.
@@ -869,7 +1368,46 @@ CoffeeBuilderPanel.prototype = {
      *
      * @return  Boolean
      */
-  , canNext: CoffeeBuilder.prototype.canNext 
+  , canNext: CoffeeBuilder.prototype.canNext
+   
+    /**
+     * Returns a stylesheet representing all current customizations for a given
+     * panel.
+     *
+     * @param   string panel  The name of the panel to get the customizations for
+     * @return  string
+     */     
+  , getStyleSheetForPanel: CoffeeBuilder.prototype.getStyleSheetForPanel
+  
+
+    /**
+     * Returns a stylesheet representing all current customizations for a given
+     * panel's control.
+     *
+     * @param   string panel    The name of the panel where the control can be found
+     * @param   string control  The name of the control to get the customizations for
+     * @return  string
+     */
+  , getStyleSheetForPanelControl: CoffeeBuilder.prototype.getStyleSheetForPanelControl
+  
+    /**
+     * Gets/Sets data object for a given panel.
+     *
+     * @param   string panel  The name of the panel to get the data object for
+     * @param   Object data   The data object (optional, used for setting)
+     * @return  string
+     */
+  , dataForPanel: CoffeeBuilder.prototype.dataForPanel
+  
+    /**
+     * Gets/Sets data object for a given panel's control.
+     *
+     * @param   string panel    The name of the panel where the control can be found
+     * @param   string control  The name of the control to get the customizations for
+     * @param   Object data     The data object (optional, used for setting)
+     * @return  string
+     */    
+  , dataForPanelControl: CoffeeBuilder.prototype.dataForPanelControl
 };
 
 /**
@@ -963,6 +1501,18 @@ var CoffeeBuilderControl = function(builder, panel, name, manifest, group) {
   
   // hash of jQuery objects for all form fields in the control
   this.fields = {};
+
+  // properties managed by the control
+  this.props = {
+    css: [],
+    data: {}
+  };
+  
+  // The stylesheet to be managed by the control
+  this.stylesheet = new CoffeeBuilderStylesheet();
+  if($.isFunction(this.init)) {
+    this.init();
+  }
 };
 /**
  * Gets the first selector/property pair from a control's manifest. This
@@ -984,8 +1534,11 @@ CoffeeBuilderControl.getSelector = function(manifest){
 
   if(manifest.selectors) {
     $.each(manifest.selectors, function(selector, properties) {
-      getSelector = { selector: selector, property: properties[0] };
-      return false;
+      // Skip psuedo-selectors
+      if(selector.indexOf(':') === -1) {
+        getSelector = { selector: selector, property: properties[0] };
+        return false;
+      }
     });
   }
 
@@ -997,11 +1550,16 @@ CoffeeBuilderControl.prototype = {
     /**
      * Builds and adds the DOM elements for the control.
      *
+     * @param   jQuery $element  Optional element to insert the control before
      * @return  CoffeeBuilderControl
      */      
-  , build: function() {
+  , build: function($element) {
       if(this.$element.length) {
-        this.panel.$fieldset.append(this.$element);
+        if($element !== undefined) {
+          this.$element.insertBefore($element.eq(0));
+        } else {
+          this.$element.appendTo(this.panel.$fieldset);
+        }
       }
       
       return this;
@@ -1014,17 +1572,46 @@ CoffeeBuilderControl.prototype = {
      * @return  String
      */      
   , getCss: function(property) {  
-      var 
+      var
+        old_style = null,
+        old_css = null,
         css = null,
         selector = this.getSelector(),
         $element = this.getElement();
 
-      if(!$element.length || !(property || selector.property)) {
+      // Can't get the CSS if there is no selector/property
+      property = property || selector.property;      
+      if(!selector.selector || !property) {
         return null;
       }
+      
+      // If the element doesn't exist uet, attempt to mock it
+      if($element.length === 0) {
+        this.builder.mockElement(selector.selector);
+        $element = this.getElement();
+      }
+      
+      // Some browsers require a style before a valid width/color is reported      
+      var matches = property.match(/^(border.*)(?:-(?:color|width))$/);
+      if(matches && $element.css(matches[1] + '-style') === 'none') {
+        old_css = { property: matches[1] + '-style', value: 'none' };
+        old_style = $element.attr('style') || '';
+        $element.css(old_css.property, 'solid');
+      }
+      
+      // Get the CSS of the element, converting rgba to hex 
+      css = $element.css(property);
+      if(typeof css === 'string' && css.match(/^rgba?\(.*?\)$/)) {
+        css = this.getHexAlpha(css).hex;
+      }
 
-      css = $element.css(property ? property : selector.property);
-      return (typeof css === 'string' && css.match(/^rgba?\(.*?\)$/)) ? this.getHexAlpha(css).hex : css;
+      // Revert styles if necessary
+      if(old_css) {
+        $element.css(old_css.property, old_css.value);
+        $element.attr('style', old_style);
+      }
+      
+      return css;
     }
 
     /**
@@ -1038,29 +1625,39 @@ CoffeeBuilderControl.prototype = {
      * @return  void
      */
   , updateCss: function(property, value) {
+
       var self = this;
-  
+
       // Argumemt shifting for the optional `property` argument. 
       if(arguments.length === 1) {
         value = property;
         property = value;
       }
   
-      $.each(this.manifest.selectors, function(selector, properties){
-        var element = self.builder.$contents.find(selector);
-        if(!element.length) {
-          return true;
-        }
-  
+      // Bail if the control doesn't map to any selectors
+      if(self.manifest.selectors === undefined) {
+        return;
+      }
+      
+      $.each(self.manifest.selectors, function(selector, properties){          
         if(property) {
-          element.css(property, value);
+          self.stylesheet.addRule(selector, property, value);
+          CoffeeBuilderNotifications.postNotification('updateCss', selector, property, value);
           return true;
         }
   
         for(var i = 0; i < properties.length; i++) {
-          element.css(properties[i], value);
+          self.stylesheet.addRule(selector, properties[i], value);
+          CoffeeBuilderNotifications.postNotification('updateCss', selector, properties[i], value);
         }
       });
+
+      var css = self.builder.getStyleSheet().toString();
+      if(self.builder.$styles[0].styleSheet) { // IE
+        self.builder.$styles[0].styleSheet.cssText = css;
+      } else {
+        self.builder.$styles.html(css);
+      }
     }
     
     /**
@@ -1077,18 +1674,20 @@ CoffeeBuilderControl.prototype = {
         find_element = $find_element.get(0),
         $element;
   
-      $.each(self.manifest.selectors, function(selector, properties){
-        if(!($element = self.builder.$contents.find(selector)).length) {
-          return false;
-        }
-  
-        $element.each(function(){
-          if(this === find_element) {
-            found = true;
+      if(self.manifest.selectors !== undefined) {
+        $.each(self.manifest.selectors, function(selector, properties){
+          if(selector.indexOf(':') !== -1 || !($element = self.builder.$contents.find(selector)).length) {
             return false;
           }
+
+          $element.each(function(){
+            if(this === find_element) {
+              found = true;
+              return false;
+            }
+          });
         });
-      });
+      }
   
       return found;
     }      
@@ -1097,11 +1696,21 @@ CoffeeBuilderControl.prototype = {
      * Gets the jQuery element associated with the DOM element managed by the
      * current control.
      *
+     * @param   ignore_mocker  If mocked elements sould be ignored
      * @return  jQuery
      */    
-  , getElement: function() {
+  , getElement: function(ignore_mocker) {
       var selector = this.getSelector();
-      return !selector.selector ? $() : this.builder.$contents.find(selector.selector);
+      if(!selector.selector) {
+        return $();
+      }
+      
+      var $find = this.builder.$contents.find(selector.selector);
+      if(ignore_mocker && $find.parent().is('#coffee_mocker')) {
+        return $();
+      }
+      
+      return $find;
     }
     
     /**
@@ -1173,10 +1782,10 @@ CoffeeBuilderControl.prototype = {
      * Sets the title for a control.
      *
      * @param   jQuery $element  The title element
-     * @return  String
+     * @return  jQuery
      */      
   , setTitle: function($element){
-      $element.toggleClass('section_head', !this.manifest.weak_label).append(window.document.createTextNode(' ' + this.manifest.name + ':'));
+      return $element.toggleClass('section_head', !this.manifest.weak_label).append(window.document.createTextNode(' ' + this.manifest.name + ':'));
     }
     
     /**
@@ -1188,6 +1797,92 @@ CoffeeBuilderControl.prototype = {
       $.each(this.fields, function(field_name, field){
         field.change();
       });
+    }
+    
+    /**
+     * Returns a stylesheet representing all current customizations.
+     *
+     * @param   boolean full  If the full stylesheet (not just customizations) should be returned.
+     * @return  string
+     */
+  , getStyleSheet: function(full) {
+      if(!full){
+        return this.stylesheet;        
+      }
+      
+      var 
+        self = this,
+        stylesheet = new CoffeeBuilderStylesheet();      
+      
+      // Bail if the control doesn't map to any selectors
+      if(self.manifest.selectors === undefined) {
+        return stylesheet;
+      }      
+      
+      // The control defines static properties
+      if(self.props.css.length !== 0) {
+        $.each(self.props.css, function(index, property){
+          var value = self.getCss(property);
+          $.each(self.manifest.selectors, function(selector){
+            stylesheet.addRule(selector, property, value);
+          });
+        });
+        
+      // The properties come from the manifest
+      } else {
+        var value = self.getCss();
+        $.each(self.manifest.selectors, function(selector, properties){
+          for(var i = 0; i < properties.length; i++) {
+            stylesheet.addRule(selector, properties[i], value);
+          }
+        });
+      }
+      
+      return stylesheet;
+    }
+    
+    /**
+     * Adds a new data value and initializes it
+     *
+     * @param   string key   The new data key
+     * @param   mixed value  The new data value
+     * @return  Object
+     */    
+  , addData: function(key, value) {
+      var data = {};
+    
+      this.props.data[key] = undefined;
+      data[key] = value;
+      
+      this.data(data);
+    }
+    
+    /**
+     * Gets/Sets data object.
+     *
+     * @param   Object data  The data object (optional, used for setting)
+     * @return  Object
+     */    
+  , data: function(data) {
+      var 
+        self = this,
+        writer = arguments.length > 0;
+      data = data || {};
+
+      if(writer) {        
+        $.each(data, function(index, value){
+          if(self.props.data.hasOwnProperty(index) && self.props.data[index] !== value) {            
+            if($.isFunction(self.dataChanged)) {
+              value = self.dataChanged(index, value);
+            }
+            
+            self.props.data[index] = value;
+            CoffeeBuilderNotifications.postNotification('data', index, value);
+          }
+        });
+      }
+
+      return self.props.data;
     }
 };
 
@@ -1231,6 +1926,43 @@ CoffeeBuilderControlGroup.prototype = $.extend({}, CoffeeBuilderControl.prototyp
     }
     
     /**
+     * Returns a stylesheet representing all current customizations.
+     *
+     * @param   boolean full  If the full stylesheet (not just customizations) should be returned.
+     * @return  string
+     */
+  , getStyleSheet: function(full) {
+      var stylesheet = new CoffeeBuilderStylesheet();
+    
+      $.each(this.controls.items, function(control_name, control){
+        stylesheet.merge(control.getStyleSheet(full));
+      });
+      
+      return stylesheet;
+    }
+    
+    /**
+     * Gets/Sets data object for all controls.
+     *
+     * @param   Object data  The data object (optional, used for setting)
+     * @return  Object
+     */
+  , data: function(data) {
+      var writer = arguments.length > 0;
+      data = data || {};
+  
+      $.each(this.controls.items, function(control_name, control){
+        if(writer) {
+          control.data(data);
+        } else {
+          $.extend(data, control.data());
+        }
+      });
+  
+      return data;
+    }    
+    
+    /**
      * Given a jQuery element, checks if this group has fields that are meant 
      * to manage that element.
      *
@@ -1261,6 +1993,7 @@ CoffeeBuilderControlGroup.prototype = $.extend({}, CoffeeBuilderControl.prototyp
  */
 var CoffeeBuilderControls = {
     controls: {}  
+  , pristine: {}
     
     /**
      * Adds or replaces a control in to the collection of available controls.
@@ -1268,8 +2001,9 @@ var CoffeeBuilderControls = {
      * control format:
      * --------------
      * {
-     *   init: function(){ }, 
-     *   check: function(){ }
+     *   init:        function(){ }, 
+     *   check:       function(){ },
+     *   dataChanged: function(name, value){ } // (optional for data controls)
      * }
      *
      * @param   String name     The name of the control to add.
@@ -1281,6 +2015,7 @@ var CoffeeBuilderControls = {
         $.error('Invalid control provided');
       }
 
+      this.pristine[name] = control;
       this.controls[name] = function(builder, panel, name, manifest, group) {
         CoffeeBuilderControl.call(this, builder, panel, name, manifest, group);
       };
@@ -1323,30 +2058,38 @@ var CoffeeBuilderControls = {
       });
 
       // Get an instance of the control and build the element if necessary
-      var control = new ControlType(builder, panel, name, manifest, group);
-      if($.isFunction(control.init)) {
-        control.init();
-      }
+      return new ControlType(builder, panel, name, manifest, group);
+    }
 
-      return control;
+    /**
+     * Gets the prestine version of a control.
+     *
+     * @param   String name     The name of the control to get.
+     * @return  Object
+     */  
+  , getPristine: function(name) {
+      if(!$.isPlainObject(this.pristine[name])) {
+        $.error('Invalid index provided: ' + name);
+      }
+      
+      return this.pristine[name];
     }
 };
 
 /**
- * Control used for managing properties with top, left, bottom, and right
- * sizes (margins/padding).
+ * Control used for managing size-related properties.
  */  
-CoffeeBuilderControls.add('4_sided_sizer', {
-  
+CoffeeBuilderControls.add('size', {
+
     /**
      * Given a manifest, checks if this control is the appropriate type to
      * manage the properties specified in the manifest.
      *
      * @param   Object manifest  The JSON manifest to check.
      * @return  Boolean
-     */
+     */    
     check: function(manifest) {
-      return $.inArray(CoffeeBuilderControl.getSelector(manifest).property, ['margin','padding']) !== -1;
+      return typeof manifest['default'] === 'string' && manifest['default'].match(/^\d+px$/);
     }
     
     /**
@@ -1359,100 +2102,54 @@ CoffeeBuilderControls.add('4_sided_sizer', {
      */      
   , init: function() {
       var 
-        self = this,
-        selector = self.getSelector(),
-        size, 
-        property;        
-    
-      // Set the element
-      self.$element = $(
-        '<label class="label_input_grouped"><span class="primary_left"></span><input class="input_right sizer" type="number" min="0" max="100"></label>' +
-        '<label class="label_input_grouped"><input class="input_right sizer" type="number" min="0" max="100"></label>' +
-        '<label class="label_input_grouped"><input class="input_right sizer" type="number" min="0" max="100"></label>' +
-        '<label class="label_input_grouped"><input class="input_right sizer" type="number" min="0" max="100"></label>' +
-        '<span class="sizer_label">Top</span><span class="sizer_label">Right</span><span class="sizer_label">Bottom</span><span class="sizer_label">Left</span>'
+        options = this.manifest.options || [],
+        min = options.min || '0',
+        max = options.max || '1000',
+        value = this.getCss() || options['default'] || min;
+        
+      this.$element = $('<label class="label_input"><span class="primary_left"></span><input type="number" class="input_right size_field"></label>');
+      this.fields.input = this.$element.find('input');
+      this.setTitle(this.$element.find('span:first'));
+      
+      CoffeeBuilderEvents.get('initialize_sizers')(        
+        this.fields.input.attr({
+          name: this.name,
+          value: parseInt(value, 10),
+          min: min,
+          max: max,
+          maxlength: max.length
+        })
+        .change($.proxy(this.inputChange, this))
+        .keyup($.proxy(this.inputKeyup, this))
       );
-      
-      // Set the fields
-      $.each(['top','right','bottom','left'], function(index, side){
-        
-        property = selector.property + '-' + side;
-        size = self.getCss(property) || 0;
-        
-        self.fields[property] = self.$element.eq(index).find('input.sizer')
-          .data('builder-property', property)
-          .val(parseInt(size, 10))
-          .change($.proxy(self.sizeChange, self))
-          .keyup($.proxy(self.sizeKeyup, self));
-              
-        CoffeeBuilderEvents.get('initialize_sizers')(self.fields[property]);
-      });
-      
-      // Set the title
-      self.setTitle(self.$element.find('span:first'));                
     }
-    
+
     /**
-     * Event listener (proxy) for a size input field's `change()` event.
+     * Event listener (proxy) for the size input field's `change()` event.
      *
      * @param  jQuery.Event event  The input `change()` event.
      * @param  Boolean
-     */      
-  , sizeChange: function(event) {
-      return CoffeeBuilderEvents.get('sizer_change')(event, this, $(event.currentTarget).data('builder-property'));
-    }
-  
-    /**
-     * Event listener (proxy) for a size input field's `keyup()` event.
-     *
-     * @param  jQuery.Event event  The input `keyup()` event.
-     * @param  Boolean
      */
-  , sizeKeyup: function(event) {
-      return CoffeeBuilderEvents.get('sizer_keyup')(event, this, $(event.currentTarget).data('builder-property'));
-    }      
-});
-
-/**
- * Control used for managing background properties.
- */  
-CoffeeBuilderControls.add('background', {
-  
-    /**
-     * Given a manifest, checks if this control is the appropriate type to
-     * manage the properties specified in the manifest.
-     *
-     * @param   Object manifest  The JSON manifest to check.
-     * @return  Boolean
-     */
-    check: function(manifest) {        
-      return CoffeeBuilderControl.getSelector(manifest).property === 'background';
+  , inputChange: function(event) {
+      return CoffeeBuilderEvents.get('sizer_change')(event, this);
     }
     
     /**
-     * Initializes the control by adding the following instance variables:
+     * Event listener (proxy) for the size input field's `keyup()` event.
      *
-     * this.$element // jQuery object for the entire control
-     * this.fields   // hash of jQuery objects for all form fields in the control
-     *
-     * @return  void
+     * @param  jQuery.Event event  The input `keyup()` event.
+     * @param  Boolean
      */      
-  , init: function() {
-      var bgcolor = this.getCss('background-color') || '#000000';
-
-      this.$element = $('<label class="label_input"><span class="primary_left"></span><input type="text" class="color_right color_picker"></label>');
-      this.fields.bgcolor = this.$element.find('input.color_picker').val(bgcolor);
-      this.setTitle(this.$element.find('span:first'));
-
-      CoffeeBuilderEvents.get('colorpicker_initialize')(this, this.fields.bgcolor, 'background-color');
+  , inputKeyup: function(event) {
+      return CoffeeBuilderEvents.get('sizer_keyup')(event, this);
     }
 });
 
 /**
- * Control used for managing border properties.
+ * Control used for managing text-related properties.
  */  
-CoffeeBuilderControls.add('border', {
-
+CoffeeBuilderControls.add('text', {
+  
     /**
      * Given a manifest, checks if this control is the appropriate type to
      * manage the properties specified in the manifest.
@@ -1461,191 +2158,138 @@ CoffeeBuilderControls.add('border', {
      * @return  Boolean
      */
     check: function(manifest) {
-      return $.inArray(CoffeeBuilderControl.getSelector(manifest).property, [
-        'border-top',
-        'border-bottom',
-        'border-left',
-        'border-right',
-        'border'
-      ]) !== -1;
+      return manifest.type === 'text';
     }
     
     /**
      * Initializes the control by adding the following instance variables:
      *
-     * this.$element // jQuery object for the entire control
-     * this.fields   // hash of jQuery objects for all form fields in the control
+     * this.$element   // jQuery object for the entire control
+     * this.fields     // hash of jQuery objects for all form fields in the control
+     * this.properties // (optional) CSS properties managed by the control
      *
      * @return  void
      */      
-  , init: function() {      
+  , init: function() {
       var 
-        css,
-        styles = '',
-        revert = false,
-        self = this,
-        selector = self.getSelector(),
-        style = self.getCss(selector.property + '-style') || 'none',
-        width,
-        color;
-      
+        options = this.manifest.options || [],
+        fonts = '',
+        family = this.getCss('font-family') || 'Helvetica, Arial, sans-serif',
+        size = this.getCss('font-size') || '13px',
+        color = this.getCss('color') || '#000000',
+        $text = this.getElement();
+
+      // Fonts list
       $.each({
-        'None':   'none',
-        'Dotted': 'dotted',
-        'Dashed': 'dashed',
-        'Solid':  'solid',
-        'Double': 'double',
-        'Groove': 'groove',
-        'Ridge':  'ridge',
-        'Inset':  'inset',
-        'Outset': 'outset'
+        'Arial':                  "Arial, Helvetica, sans-serif",
+        'Baskerville':            "Baskerville, 'Times New Roman', Times, serif",
+        'Cambria':                "Cambria, Georgia, Times, 'Times New Roman', serif",
+        'Century Gothic':         "'Century Gothic', 'Apple Gothic', sans-serif",
+        'Consolas':               "Consolas, 'Lucida Console', Monaco, monospace",
+        'Copperplate Light':      "'Copperplate Light', 'Copperplate Gothic Light', serif",
+        'Courier New':            "'Courier New', Courier, monospace",
+        'Franklin Gothic Medium': "'Franklin Gothic Medium', 'Arial Narrow Bold', Arial, sans-serif",
+        'Futura':                 "Futura, 'Century Gothic', AppleGothic, sans-serif",
+        'Garamond':               "Garamond, 'Hoefler Text', 'Times New Roman', Times, serif",
+        'Geneva':                 "Geneva, 'Lucida Sans', 'Lucida Grande', 'Lucida Sans Unicode', Verdana, sans-serif",
+        'Georgia':                "Georgia, Palatino, 'Palatino Linotype', Times, 'Times New Roman', serif",
+        'Gill Sans':              "'Gill Sans', Calibri, 'Trebuchet MS', sans-serif",
+        'Helvetica':              "Helvetica, Arial, sans-serif",
+        'Impact':                 "Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif",
+        'Lucida Sans':            "'Lucida Sans', 'Lucida Grande', 'Lucida Sans Unicode', sans-serif",
+        'Palatino':               "Palatino, 'Palatino Linotype', Georgia, Times, 'Times New Roman', serif",
+        'Tahoma':                 "Tahoma, Geneva, Verdana",
+        'Times':                  "Times, 'Times New Roman', Georgia, serif",
+        'Trebuchet MS':           "'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif",
+        'Verdana':                "Verdana, Geneva, Tahoma, sans-serif"
       }, function(name, value) {
-        styles += '<option value="' + value + '" title="' + name + '">' + name + '</option>';
-      });      
+        fonts += '<option value="' + value + '" title="' + value + '">' + name + '</option>';
+      });
       
-      // Some browsers require a style before a valid width/color is reported
-      self.updateCss(selector.property + '-style', 'solid');
-      width = self.getCss(selector.property + '-width') || '0';
-      color = self.getCss(selector.property + '-color') || '#000000';
-      self.updateCss(selector.property + '-style', style);
-    
+      // Set the CSS properties
+      this.properties = ['font-family','font-size','color'];
+      
       // Set the element
-      self.$element = $(
-        '<label class="label_grouped_main"><span class="primary_left"></span><select class="combo_right combo_font select_field">' + styles + '</select></label>' +
-        '<label class="label_grouped"><input class="input_right size_field combo_color_and_size" type="text" min="0" max="20" value="13" maxlength="2"></label>' +
-        '<label class="label_grouped"><input type="text" class="color_right color_picker"></label>'
+      this.$element = $(
+        '<div class="control_group text_group">' +
+        ' <label class="label_input"><span class="primary_left"></span><input type="text" class="input_right description_text" maxlength="36"></label>' +
+        ' <label class="label_grouped_main"><span class="primary_left">Font:</span><select class="combo_right combo_font select_field">' + fonts + '</select></label>' +
+        ' <label class="label_grouped"><input class="input_right size_field combo_color_and_size" type="text" min="8" max="80" maxlength="2"></label>' +
+        ' <label class="label_grouped"><input type="text" class="color_right color_picker"></label>' +
+        '</div>'
       );
       
-      // Set the title
-      this.$element.find('span:first').text(self.manifest.name + ':');
-      
-      // Set the fields
-      self.fields = {
-        style: this.$element.find('select').val(style),
-        width: this.$element.find('input.size_field').val(parseInt(width, 10)),
+      // Core elements
+      this.fields = {
+        family: this.$element.find('select').val(family),
+        size: this.$element.find('input.size_field').val(parseInt(size, 10)),
+        input: this.$element.find('input.description_text'),
         color: this.$element.find('input.color_picker').val(color)
       };
       
-      // Set field properties
-      $.each(['style','width','color'], function(index, name){
-        self[name + '_property'] = selector.property + '-' + name;
-      });
-      
-      // Set field events
-      self.fields.style.change($.proxy(self.styleChange, self));
-      CoffeeBuilderEvents.get('initialize_sizers')(self.fields.width.change($.proxy(self.widthChange, self)).keyup($.proxy(self.widthKeyup, self)));
-      CoffeeBuilderEvents.get('colorpicker_initialize')(self, self.fields.color, self.color_property, undefined, $.proxy(self.colorChangeAll, self));
-      
-      // Add the lock if part of a group
-      if(self.group) {
-        if(self.group.controls.length === 0) {
-          self.locked = true;
-          self.$lock = $('<img class="starter_icon border_lock" src="images/icons/padlock-closed.png" width="12" height="12">').wrap('<label class="label_grouped">').click($.proxy(self.borderLock, self));
-          this.$element = this.$element.add(self.$lock).find('span:first').prepend($('<b>').text(self.group.manifest.name + ' ')).end();
-        } else {
-          CoffeeBuilderEvents.get('border_initialize')(self);
-        }          
+      // Set the title
+      this.setTitle(this.$element.find('span:first'));        
+
+      // Initialize the color picker
+      CoffeeBuilderEvents.get('colorpicker_initialize')(this, this.fields.color, 'color');
+
+      // Add events
+      if($text.length) {
+
+        this.fields.input.val($text.text()).change($.proxy(this.textChange, this)).keyup($.proxy(this.textChange, this));
+        this.fields.family.change($.proxy(this.fontFamilyChange, this));
+        
+        CoffeeBuilderEvents.get('initialize_sizers')(
+          this.fields.size.change($.proxy(this.fontSizeChange, this)).keyup($.proxy(this.fontSizeKeyup, this))
+        );
+
+      // Otherwise, disable controls
+      } else {
+        $.each(this.fields, function(field_name, field){
+          field.attr('disabled', true);
+        });
       }
     }
-
+    
     /**
-     * Event listener (proxy) for a width input field's `change()` event.
+     * Event listener (proxy) for the font-size input field's `change()` event.
      *
-     * @param  jQuery.Event event  The input `change()` event.
+     * @param  jQuery.Event event  The font-size input `change()` event.
      * @param  Boolean
-     */
-  , widthChange: function(event) {
-      return CoffeeBuilderEvents.get('sizer_change')(event, this, this.width_property, $.proxy(this.widthChangeAll, this));
+     */      
+  , fontSizeChange: function(event) {
+      return CoffeeBuilderEvents.get('sizer_change')(event, this, 'font-size');
     }
   
     /**
-     * Event listener (proxy) for a width input field's `keyup()` event.
+     * Event listener (proxy) for the font-size input field's `keyup()` event.
+     *
+     * @param  jQuery.Event event  The font-size input `keyup()` event.
+     * @param  Boolean
+     */ 
+  , fontSizeKeyup: function(event) {
+      return CoffeeBuilderEvents.get('sizer_keyup')(event, this, 'font-size');
+    }  
+
+    /**
+     * Event listener (proxy) for the font-family select field's `change()` event.
      *
      * @param  jQuery.Event event  The input `keyup()` event.
      * @param  Boolean
-     */    
-  , widthKeyup: function(event) {
-      return CoffeeBuilderEvents.get('sizer_keyup')(event, this, this.width_property, $.proxy(this.widthChangeAll, this));
-    }
-
-    /**
-     * Hook called after the width input field's `change()` and `keyup()` event
-     * to update locked fields if necessary.
-     *
-     * @param  String newvalue  The updated CSS width
-     * @param  Boolean
-     */
-  , widthChangeAll: function(newvalue) {
-      return this.propertyUpdateAll('width_property', 'width', newvalue);
-    }      
+     */      
+  , fontFamilyChange: function(event) {
+      return CoffeeBuilderEvents.get('select_change')(event, this, 'font-family');
+    }          
     
     /**
-     * Event listener (proxy) for a style select field's `change()` event.
+     * Event listener (proxy) for the text input field's `change()` event.
      *
-     * @param  jQuery.Event event  The select `change()` event.
+     * @param  jQuery.Event event  The input `change()` event.
      * @param  Boolean
      */      
-  , styleChange: function(event) {
-      return CoffeeBuilderEvents.get('select_change')(event, this, this.style_property, $.proxy(this.styleChangeAll, this));
+  , textChange: function(event) {
+      return CoffeeBuilderEvents.get('text_change')(event, this);
     }
-    
-    /**
-     * Hook called after the width style select field's `change()` event
-     * to update locked fields if necessary.
-     *
-     * @param  String newvalue  The updated CSS style
-     * @param  Boolean
-     */      
-  , styleChangeAll: function(newvalue) {
-      return this.propertyUpdateAll('style_property', 'style', newvalue);
-    }
-    
-    /**
-     * Hook called after the width color input field's `change()` event
-     * to update locked fields if necessary.
-     *
-     * @param  String newvalue  The updated CSS color
-     * @param  Boolean
-     */   
-  , colorChangeAll: function(newvalue) {
-      return this.propertyUpdateAll('color_property', 'color', newvalue);
-    }
-  
-    /**
-     * Hook called after`change()` events to update locked fields if 
-     * necessary.
-     *
-     * @param  String newvalue  The updated CSS color
-     * @param  Boolean
-     */    
-  , propertyUpdateAll: function(property, element, newvalue) {
-      var self = this;
-      self.updateCss(self[property], newvalue);
-      
-      if(element === 'width') {
-        newvalue = parseInt(newvalue, 10);
-      }
-  
-      if(self.locked) {
-        $.each(self.group.controls.keys, function(index, name) {
-          if(name === self.name) {
-            return true;
-          }
-
-          self.group.controls.get(name).fields[element].val(newvalue).change();
-        });
-      }      
-    }      
-    
-    /**
-     * Event listener (proxy) for a lock's `click()` event.
-     *
-     * @param  jQuery.Event event  The lock `click()` event.
-     * @param  Boolean
-     */      
-  , borderLock: function(event) {
-      return CoffeeBuilderEvents.get('border_lock')(event, this);
-    }      
 });
 
 /**
@@ -1769,9 +2413,9 @@ CoffeeBuilderControls.add('shadow', {
 });
 
 /**
- * Control used for managing size-related properties.
+ * Control used for managing border properties.
  */  
-CoffeeBuilderControls.add('size', {
+CoffeeBuilderControls.add('border', {
 
     /**
      * Given a manifest, checks if this control is the appropriate type to
@@ -1779,9 +2423,203 @@ CoffeeBuilderControls.add('size', {
      *
      * @param   Object manifest  The JSON manifest to check.
      * @return  Boolean
-     */    
+     */
     check: function(manifest) {
-      return typeof manifest['default'] === 'string' && manifest['default'].match(/^\d+px$/);
+      return $.inArray(CoffeeBuilderControl.getSelector(manifest).property, [
+        'border-top',
+        'border-bottom',
+        'border-left',
+        'border-right',
+        'border'
+      ]) !== -1;
+    }
+    
+    /**
+     * Initializes the control by adding the following instance variables:
+     *
+     * this.$element // jQuery object for the entire control
+     * this.fields   // hash of jQuery objects for all form fields in the control
+     *
+     * @return  void
+     */      
+  , init: function() {      
+      var 
+        css,
+        styles = '',
+        revert = false,
+        self = this,
+        selector = self.getSelector(),
+        style = self.getCss(selector.property + '-style') || 'none',
+        width = self.getCss(selector.property + '-width') || '0',
+        color = self.getCss(selector.property + '-color') || '#000000';
+      
+      $.each({
+        'None':   'none',
+        'Dotted': 'dotted',
+        'Dashed': 'dashed',
+        'Solid':  'solid',
+        'Double': 'double',
+        'Groove': 'groove',
+        'Ridge':  'ridge',
+        'Inset':  'inset',
+        'Outset': 'outset'
+      }, function(name, value) {
+        styles += '<option value="' + value + '" title="' + name + '">' + name + '</option>';
+      });
+
+      // Set the element
+      self.$element = $(
+        '<label class="label_grouped_main"><span class="primary_left"></span><select class="combo_right combo_font select_field">' + styles + '</select></label>' +
+        '<label class="label_grouped"><input class="input_right size_field combo_color_and_size" type="text" min="0" max="20" value="13" maxlength="2">%</label>' +
+        '<label class="label_grouped"><input type="text" class="color_right color_picker"></label>'
+      );
+      
+      // Set the title
+      this.$element.find('span:first').text(self.manifest.name + ':');
+      
+      // Set the fields
+      self.fields = {
+        style: this.$element.find('select').val(style),
+        width: this.$element.find('input.size_field').val(parseInt(width, 10)),
+        color: this.$element.find('input.color_picker').val(color)
+      };
+      
+      // Set field properties
+      $.each(['style','width','color'], function(index, name){
+        self[name + '_property'] = selector.property + '-' + name;
+      });
+      
+      // Set field events
+      self.fields.style.change($.proxy(self.styleChange, self));
+      CoffeeBuilderEvents.get('initialize_sizers')(self.fields.width.change($.proxy(self.widthChange, self)).keyup($.proxy(self.widthKeyup, self)));
+      CoffeeBuilderEvents.get('colorpicker_initialize')(self, self.fields.color, self.color_property, undefined, $.proxy(self.colorChangeAll, self));
+      
+      // Add the lock if part of a group
+      if(self.group) {
+        if(self.group.controls.length === 0) {
+          self.locked = true;
+          self.$lock = $('<span class="starter_icon border_lock">').wrap('<label class="label_grouped">').click($.proxy(self.borderLock, self));
+          this.$element = this.$element.add(self.$lock).find('span:first').prepend($('<b>').text(self.group.manifest.name + ' ')).end();
+        } else {
+          CoffeeBuilderEvents.get('border_initialize')(self);
+        }          
+      }
+    }
+
+    /**
+     * Event listener (proxy) for a width input field's `change()` event.
+     *
+     * @param  jQuery.Event event  The input `change()` event.
+     * @param  Boolean
+     */
+  , widthChange: function(event) {
+      return CoffeeBuilderEvents.get('sizer_change')(event, this, this.width_property, $.proxy(this.widthChangeAll, this));
+    }
+  
+    /**
+     * Event listener (proxy) for a width input field's `keyup()` event.
+     *
+     * @param  jQuery.Event event  The input `keyup()` event.
+     * @param  Boolean
+     */    
+  , widthKeyup: function(event) {
+      return CoffeeBuilderEvents.get('sizer_keyup')(event, this, this.width_property, $.proxy(this.widthChangeAll, this));
+    }
+
+    /**
+     * Hook called after the width input field's `change()` and `keyup()` event
+     * to update locked fields if necessary.
+     *
+     * @param  String newvalue  The updated CSS width
+     * @param  Boolean
+     */
+  , widthChangeAll: function(newvalue) {
+      return this.propertyUpdateAll('width_property', 'width', newvalue);
+    }      
+    
+    /**
+     * Event listener (proxy) for a style select field's `change()` event.
+     *
+     * @param  jQuery.Event event  The select `change()` event.
+     * @param  Boolean
+     */      
+  , styleChange: function(event) {
+      return CoffeeBuilderEvents.get('select_change')(event, this, this.style_property, $.proxy(this.styleChangeAll, this));
+    }
+    
+    /**
+     * Hook called after the width style select field's `change()` event
+     * to update locked fields if necessary.
+     *
+     * @param  String newvalue  The updated CSS style
+     * @param  Boolean
+     */      
+  , styleChangeAll: function(newvalue) {
+      return this.propertyUpdateAll('style_property', 'style', newvalue);
+    }
+    
+    /**
+     * Hook called after the width color input field's `change()` event
+     * to update locked fields if necessary.
+     *
+     * @param  String newvalue  The updated CSS color
+     * @param  Boolean
+     */   
+  , colorChangeAll: function(newvalue) {
+      return this.propertyUpdateAll('color_property', 'color', newvalue);
+    }
+  
+    /**
+     * Hook called after`change()` events to update locked fields if 
+     * necessary.
+     *
+     * @param  String newvalue  The updated CSS color
+     * @param  Boolean
+     */    
+  , propertyUpdateAll: function(property, element, newvalue) {
+      var self = this;
+      self.updateCss(self[property], newvalue);
+      
+      if(element === 'width') {
+        newvalue = parseInt(newvalue, 10);
+      }
+  
+      if(self.locked) {
+        $.each(self.group.controls.keys, function(index, name) {
+          if(name === self.name) {
+            return true;
+          }
+
+          self.group.controls.get(name).fields[element].val(newvalue).change();
+        });
+      }      
+    }      
+    
+    /**
+     * Event listener (proxy) for a lock's `click()` event.
+     *
+     * @param  jQuery.Event event  The lock `click()` event.
+     * @param  Boolean
+     */      
+  , borderLock: function(event) {
+      return CoffeeBuilderEvents.get('border_lock')(event, this);
+    }      
+});
+
+/**
+ * Control used for managing background properties.
+ */  
+CoffeeBuilderControls.add('background', {
+  
+    /**
+     * Given a manifest, checks if this control is the appropriate type to
+     * manage the properties specified in the manifest.
+     *
+     * @param   Object manifest  The JSON manifest to check.
+     * @return  Boolean
+     */
+    check: function(manifest) {        
+      return CoffeeBuilderControl.getSelector(manifest).property === 'background';
     }
     
     /**
@@ -1793,54 +2631,21 @@ CoffeeBuilderControls.add('size', {
      * @return  void
      */      
   , init: function() {
-      var 
-        options = this.manifest.options || [],
-        min = options.min || '0',
-        max = options.max || '1000',
-        value = this.getCss() || options['default'] || min;
-        
-      this.$element = $('<label class="label_input"><span class="primary_left"></span><input type="number" class="input_right size_field"></label>');
-      this.fields.input = this.$element.find('input');
-      this.setTitle(this.$element.find('span:first'));
-      
-      CoffeeBuilderEvents.get('initialize_sizers')(        
-        this.fields.input.attr({
-          name: this.name,
-          value: parseInt(value, 10),
-          min: min,
-          max: max,
-          maxlength: max.length
-        })
-        .change($.proxy(this.inputChange, this))
-        .keyup($.proxy(this.inputKeyup, this))
-      );
-    }
+      var bgcolor = this.getCss('background-color') || '#000000';
 
-    /**
-     * Event listener (proxy) for the size input field's `change()` event.
-     *
-     * @param  jQuery.Event event  The input `change()` event.
-     * @param  Boolean
-     */
-  , inputChange: function(event) {
-      return CoffeeBuilderEvents.get('sizer_change')(event, this);
-    }
-    
-    /**
-     * Event listener (proxy) for the size input field's `keyup()` event.
-     *
-     * @param  jQuery.Event event  The input `keyup()` event.
-     * @param  Boolean
-     */      
-  , inputKeyup: function(event) {
-      return CoffeeBuilderEvents.get('sizer_keyup')(event, this);
+      this.$element = $('<label class="label_input"><span class="primary_left"></span><input type="text" class="color_right color_picker"></label>');
+      this.fields.bgcolor = this.$element.find('input.color_picker').val(bgcolor);
+      this.setTitle(this.$element.find('span:first'));
+
+      CoffeeBuilderEvents.get('colorpicker_initialize')(this, this.fields.bgcolor, 'background-color');
     }
 });
 
 /**
- * Control used for managing text-related properties.
+ * Control used for managing properties with top, left, bottom, and right
+ * sizes (margins/padding).
  */  
-CoffeeBuilderControls.add('text', {
+CoffeeBuilderControls.add('4_sided_sizer', {
   
     /**
      * Given a manifest, checks if this control is the appropriate type to
@@ -1850,134 +2655,84 @@ CoffeeBuilderControls.add('text', {
      * @return  Boolean
      */
     check: function(manifest) {
-      return manifest.type === 'text';
+      return $.inArray(CoffeeBuilderControl.getSelector(manifest).property, ['margin','padding']) !== -1;
     }
     
     /**
      * Initializes the control by adding the following instance variables:
      *
-     * this.$element // jQuery object for the entire control
-     * this.fields   // hash of jQuery objects for all form fields in the control
+     * this.$element   // jQuery object for the entire control
+     * this.fields     // hash of jQuery objects for all form fields in the control
+     * this.properties // (optional) CSS properties managed by the control
      *
      * @return  void
      */      
   , init: function() {
       var 
-        options = this.manifest.options || [],
-        fonts = '',
-        family = this.getCss('font-family') || 'Helvetica, Arial, sans-serif',
-        size = this.getCss('font-size') || '13px',
-        color = this.getCss('color') || '#000000',
-        $text = this.getElement();
+        self = this,
+        selector = self.getSelector(),
+        properties = ['top','right','bottom','left'];
 
-      // Fonts list
-      $.each({
-        'Arial':                  "Arial, Helvetica, sans-serif",
-        'Baskerville':            "Baskerville, 'Times New Roman', Times, serif",
-        'Cambria':                "Cambria, Georgia, Times, 'Times New Roman', serif",
-        'Century Gothic':         "'Century Gothic', 'Apple Gothic', sans-serif",
-        'Consolas':               "Consolas, 'Lucida Console', Monaco, monospace",
-        'Copperplate Light':      "'Copperplate Light', 'Copperplate Gothic Light', serif",
-        'Courier New':            "'Courier New', Courier, monospace",
-        'Franklin Gothic Medium': "'Franklin Gothic Medium', 'Arial Narrow Bold', Arial, sans-serif",
-        'Futura':                 "Futura, 'Century Gothic', AppleGothic, sans-serif",
-        'Garamond':               "Garamond, 'Hoefler Text', 'Times New Roman', Times, serif",
-        'Geneva':                 "Geneva, 'Lucida Sans', 'Lucida Grande', 'Lucida Sans Unicode', Verdana, sans-serif",
-        'Georgia':                "Georgia, Palatino, 'Palatino Linotype', Times, 'Times New Roman', serif",
-        'Gill Sans':              "'Gill Sans', Calibri, 'Trebuchet MS', sans-serif",
-        'Helvetica':              "Helvetica, Arial, sans-serif",
-        'Impact':                 "Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif",
-        'Lucida Sans':            "'Lucida Sans', 'Lucida Grande', 'Lucida Sans Unicode', sans-serif",
-        'Palatino':               "Palatino, 'Palatino Linotype', Georgia, Times, 'Times New Roman', serif",
-        'Tahoma':                 "Tahoma, Geneva, Verdana",
-        'Times':                  "Times, 'Times New Roman', Georgia, serif",
-        'Trebuchet MS':           "'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif",
-        'Verdana':                "Verdana, Geneva, Tahoma, sans-serif"
-      }, function(name, value) {
-        fonts += '<option value="' + value + '" title="' + value + '">' + name + '</option>';
-      });
-      
-      // Set the element
-      this.$element = $(
-        '<div class="control_group text_group">' +
-        ' <label class="label_input"><span class="primary_left"></span><input type="text" class="input_right description_text" maxlength="36"></label>' +
-        ' <label class="label_grouped_main"><span class="primary_left">Font:</span><select class="combo_right combo_font select_field">' + fonts + '</select></label>' +
-        ' <label class="label_grouped"><input class="input_right size_field combo_color_and_size" type="text" min="8" max="80" maxlength="2"></label>' +
-        ' <label class="label_grouped"><input type="text" class="color_right color_picker"></label>' +
-        '</div>'
-      );
-      
-      // Core elements
-      this.fields = {
-        family: this.$element.find('select').val(family),
-        size: this.$element.find('input.size_field').val(parseInt(size, 10)),
-        input: this.$element.find('input.description_text'),
-        color: this.$element.find('input.color_picker').val(color)
-      };
-      
-      // Set the title
-      this.setTitle(this.$element.find('span:first'));        
-
-      // Initialize the color picker
-      CoffeeBuilderEvents.get('colorpicker_initialize')(this, this.fields.color, 'color');
-
-      // Add events
-      if($text.length) {
-
-        this.fields.input.val($text.text()).change($.proxy(this.textChange, this)).keyup($.proxy(this.textChange, this));
-        this.fields.family.change($.proxy(this.fontFamilyChange, this));
-        
-        CoffeeBuilderEvents.get('initialize_sizers')(
-          this.fields.size.change($.proxy(this.fontSizeChange, this)).keyup($.proxy(this.fontSizeKeyup, this))
-        );
-
-      // Otherwise, disable controls
-      } else {
-        $.each(this.fields, function(field_name, field){
-          field.attr('disabled', true);
-        });
+      if(self.manifest.options && $.isArray(self.manifest.options.properties)) {
+        properties = self.manifest.options.properties;
       }
-    }
-    
-    /**
-     * Event listener (proxy) for the font-size input field's `change()` event.
-     *
-     * @param  jQuery.Event event  The font-size input `change()` event.
-     * @param  Boolean
-     */      
-  , fontSizeChange: function(event) {
-      return CoffeeBuilderEvents.get('sizer_change')(event, this, 'font-size');
-    }
-  
-    /**
-     * Event listener (proxy) for the font-size input field's `keyup()` event.
-     *
-     * @param  jQuery.Event event  The font-size input `keyup()` event.
-     * @param  Boolean
-     */ 
-  , fontSizeKeyup: function(event) {
-      return CoffeeBuilderEvents.get('sizer_keyup')(event, this, 'font-size');
-    }  
 
-    /**
-     * Event listener (proxy) for the font-family select field's `change()` event.
-     *
-     * @param  jQuery.Event event  The input `keyup()` event.
-     * @param  Boolean
-     */      
-  , fontFamilyChange: function(event) {
-      return CoffeeBuilderEvents.get('select_change')(event, this, 'font-family');
-    }          
+      // Set the element
+      self.$element = $('<div class="four_sided_container">');
+      self.$four_sided_labels= $('<div class="four_sided_labels">');
+      
+      // Set the fields
+      $.each(properties, function(index, side){
+        
+        var 
+          $field = $('<label class="label_input_grouped"><input class="input_right sizer" type="number" min="0" max="100"></label>'),
+          $label = $('<span class="sizer_label">' + side.charAt(0).toUpperCase() + side.substr(1) + '</span>'),
+          property = selector.property + '-' + side,
+          size = self.getCss(property) || 0;
+          
+        // Add the title
+        if(index === 0) {
+          $field.prepend(self.setTitle($('<span class="primary_left"></span>')));
+        }
+        
+        // Specify specific properties if necessary
+        if(properties.length !== 4) {
+          self.properties.push(property);
+        }
+        
+        self.fields[property] = $field.find('input.sizer')
+          .data('builder-property', property)
+          .val(parseInt(size, 10))
+          .change($.proxy(self.sizeChange, self))
+          .keyup($.proxy(self.sizeKeyup, self));
+        CoffeeBuilderEvents.get('initialize_sizers')(self.fields[property]);
+        
+        self.$element.append($field);
+        self.$four_sided_labels.append($label);
+      });
+
+      self.$element.append(self.$four_sided_labels);
+    }
     
     /**
-     * Event listener (proxy) for the text input field's `change()` event.
+     * Event listener (proxy) for a size input field's `change()` event.
      *
      * @param  jQuery.Event event  The input `change()` event.
      * @param  Boolean
      */      
-  , textChange: function(event) {
-      return CoffeeBuilderEvents.get('text_change')(event, this);
+  , sizeChange: function(event) {
+      return CoffeeBuilderEvents.get('sizer_change')(event, this, $(event.currentTarget).data('builder-property'));
     }
+  
+    /**
+     * Event listener (proxy) for a size input field's `keyup()` event.
+     *
+     * @param  jQuery.Event event  The input `keyup()` event.
+     * @param  Boolean
+     */
+  , sizeKeyup: function(event) {
+      return CoffeeBuilderEvents.get('sizer_keyup')(event, this, $(event.currentTarget).data('builder-property'));
+    }      
 });
 
 /**
@@ -2018,76 +2773,6 @@ var CoffeeBuilderEvents = {
 };
 
 /**
- * Lock/Unlock event for locks on groups of border controls.
- * 
- * @param   jQuery.Event event            The change event
- * @param   CoffeeBuilderControl control  The text control
- * @return  void
- */  
-CoffeeBuilderEvents.add('border_lock', function(event, control){
-  var locked = {};
-
-  control.locked = !control.locked;
-  control.$lock.attr('src', 'images/icons/padlock-' + (control.locked ? 'closed' : 'open') + '.png');
-
-  $.each(control.group.controls.keys, function(index, name) {
-    var lock_control = control.group.controls.get(name);
-
-    $.each(['width','style','color'], function(index, field){
-
-      // Keep track of the first control in the group as it will serve as the
-      // template for all other controls
-      if(name === control.name) {
-        locked[field] = lock_control.fields[field].val();
-        
-      } else {
-
-        // If the group is locked, make all control fields match the original field
-        // and disable them.
-        if(control.locked) {
-          lock_control.fields[field].val(locked[field]).change().attr('disabled', true);
-
-        // Otherwise, enable all controls
-        } else {
-          lock_control.fields[field].removeAttr('disabled');
-        }
-      }
-    });
-  });
-}); 
-
-/**
- * Initializes border groups by unlocking the group if any of the
- * controls in the group don't match the first control.
- * 
- * @param   CoffeeBuilderControl control  The text control
- * @return  void
- */  
-CoffeeBuilderEvents.add('border_initialize', function(control){
-  var first = control.group.controls.get(0);
-  
-  // The first control in the group is not locked, no reason to proceed
-  if(!first.locked) {
-    return;
-  }
-  
-  $.each(['width','style','color'], function(index, field){
-
-    // If the control field doesn't match the corresponding field from the
-    // first control in the group, unlock the control and exit.
-    if(control.fields[field].val() !== first.fields[field].val()) {
-      first.$lock.click();
-      return false;
-
-    // Otherwise, disable the control field
-    } else {
-      control.fields[field].attr('disabled', true);
-    }
-
-  });
-});
-
-/**
  * Initializes colorpickers.
  * 
  * @param   CoffeeBuilderControl control  The colorpicker control
@@ -2100,12 +2785,7 @@ CoffeeBuilderEvents.add('border_initialize', function(control){
 CoffeeBuilderEvents.add('colorpicker_initialize', function(control, $input, property, options, callback){
   var
     value = $input.val() || '#000000',
-    $picker = $('<div class="color_right fb-color-control"><div></div></div>').insertBefore($input).find('div').css('background-color', value);    
-  
-  // Make sure we have a blocker to pop up when a colorpicker is opened
-  if(control.builder.$colorpick_blocker === undefined) {
-    control.builder.$colorpick_blocker = $('<div id="color_blocker"></div>').appendTo('body');
-  }
+    $picker = $('<div class="color_right fb-color-control"><div></div></div>').insertBefore($input).find('div').css('background-color', value);
 
   // Initialize the picker, merging the `options` parameter if necessary.
   $picker.ColorPicker(
@@ -2125,15 +2805,29 @@ CoffeeBuilderEvents.add('colorpicker_initialize', function(control, $input, prop
         
         /**
          * Event called when a colorpicker is ready to show.
-         * 
+         *
          * @param   DOMElement picker  The colorpicker dom element
          * @return  void
          */          
       , onShow: function(picker) {
-          
+          var design_mode_disabled;
+        
           // Show the picker if the input is not disabled
           if(!$input.is(':disabled')) {
-            control.builder.$colorpick_blocker.show();
+            if(design_mode_disabled = control.builder.design_mode) {
+              control.builder.toggleDesignMode(false);
+            }
+            
+            // Clicking in the iframe should also close the picker
+            control.builder.$element.contents().click(function(event){
+              $(this).unbind(event);
+              $(window.document).mousedown();
+
+              if(design_mode_disabled) {
+                control.builder.toggleDesignMode(true);
+              }
+            });
+
             $(picker).fadeIn(500);          
           }
           
@@ -2147,9 +2841,7 @@ CoffeeBuilderEvents.add('colorpicker_initialize', function(control, $input, prop
          * @return  void
          */       
       , onHide: function(picker) {
-          control.builder.$colorpick_blocker.hide();
           $(picker).fadeOut(500);
-          
           return false;
         }
     }, options)
@@ -2180,23 +2872,6 @@ CoffeeBuilderEvents.add('colorpicker_change', function(value, control, $input, p
 });
 
 /**
- * Event triggered when a window is resized to ensure that the iframe element
- * always occupies all available space except for what is designated for the
- * UI controls.
- * 
- * @param   jQuery.Event event     The resize event.
- * @param   CoffeeBuilder builder  The parent builder
- * @param   Function callback      An optional callback
- * @return  void   
- */
-CoffeeBuilderEvents.add('subpanels_change', function(builder, parent){
-  var width = (builder.width - parent.panels.length + 1) / parent.panels.length;
-  $.each(parent.panels.items, function(index, panel){
-    panel.$title.removeClass('last').css('width', width + 'px');
-  });
-  parent.panels.get(parent.panels.length-1).$title.addClass('last');
-});
-/**
  * Change event for selects which updates corresponding CSS.
  * 
  * @param   jQuery.Event event            The change event
@@ -2208,59 +2883,6 @@ CoffeeBuilderEvents.add('subpanels_change', function(builder, parent){
 CoffeeBuilderEvents.add('select_change', function(event, control, property, callback){
   var newvalue = $(event.currentTarget).val();
   return $.isFunction(callback) ? callback(newvalue) : control.updateCss(property, newvalue);
-});
-
-/**
- * Change event for all elements in the shadow control.
- *
- * NOTE: All shadow controls share the same change event because currently
- * specs do not allow for specifying individual shadow properties like
- * `box-shadow-blur`.
- *
- * @see     http://lists.w3.org/Archives/Public/www-style/2009Nov/0315.html
- * @see     http://lists.w3.org/Archives/Public/www-style/2009Nov/0317.html
- * 
- * @param   CoffeeBuilderControl control  The shadow control
- * @param   String property               An optional CSS property for the control
- * @param   Function callback             An optional callback
- * @return  void
- */  
-CoffeeBuilderEvents.add('shadow_change', function(control, property, callback){
-  if(!control.fields.checkbox.is(':checked')) {
-    return;
-  }
-  
-  var newvalue = 
-    'rgba(' + 
-      control.getRgb(control.fields.color.val()) + ', ' + 
-      control.fields.opacity.val() / 100 + 
-    ') ' + 
-    control.fields.x.val() + 'px ' + 
-    control.fields.y.val() + 'px ' + 
-    control.fields.blur.val() + 'px 0';
-
-  return $.isFunction(callback) ? callback(newvalue) : control.updateCss(property, newvalue);
-});  
-
-/**
- * Change event for the checkbox that enables/disables box-shadow.
- * 
- * @param   CoffeeBuilderControl control  The shadow control
- * @param   String property               An optional CSS property for the control
- * @param   Function callback             An optional callback
- * @return  void
- */  
-CoffeeBuilderEvents.add('shadow_checkbox', function(control, property, callback) {
-  var checked = control.fields.checkbox.is(':checked');
-
-  // Disable fields in control if checkbox isn't checked
-  $.each(control.fields, function(control_name, $field) {
-    if(control_name !== 'checkbox') {
-      $field.attr('disabled', !checked);
-    }
-  });
-
-  return checked ? CoffeeBuilderEvents.get('shadow_change')(control, property, callback) : control.updateCss(property, 'none');
 });
 
 /**
@@ -2357,25 +2979,12 @@ CoffeeBuilderEvents.add('sizer_reset', function(event, control, property, callba
     oldvalue = $field.data('oldvalue') || parseInt(control.getCss(property), 10) || 0;
   
   if(typeof message === 'string') {
-     alert(message);
+     //alert(message);
   }
   
   $field.val(oldvalue);
   return $.isFunction(callback) ? callback(oldvalue + 'px') : control.updateCss(property, oldvalue + 'px');  
 });
-/**
- * Change event for text fields which updates corresponding text elements.
- * 
- * @param   jQuery.Event event            The change event
- * @param   CoffeeBuilderControl control  The text control
- * @param   Function callback             An optional callback
- * @return  void
- */  
-CoffeeBuilderEvents.add('text_change', function(event, control, callback){
-  var newvalue = $(event.currentTarget).val();
-  return $.isFunction(callback) ? callback(newvalue) : control.updateTextElement(newvalue);
-});
-
 /**
  * Event triggered when a window is resized to ensure that the iframe element
  * always occupies all available space except for what is designated for the
@@ -2392,6 +3001,397 @@ CoffeeBuilderEvents.add('window_resize', function(event, builder, callback){
   if($.isFunction(callback)) {
     callback();
   }
+});
+
+/**
+ * Change event for text fields which updates corresponding text elements.
+ * 
+ * @param   jQuery.Event event            The change event
+ * @param   CoffeeBuilderControl control  The text control
+ * @param   Function callback             An optional callback
+ * @return  void
+ */  
+CoffeeBuilderEvents.add('text_change', function(event, control, callback){
+  var newvalue = $(event.currentTarget).val();
+  return $.isFunction(callback) ? callback(newvalue) : control.updateTextElement(newvalue);
+});
+
+/**
+ * Change event for all elements in the shadow control.
+ *
+ * NOTE: All shadow controls share the same change event because currently
+ * specs do not allow for specifying individual shadow properties like
+ * `box-shadow-blur`.
+ *
+ * @see     http://lists.w3.org/Archives/Public/www-style/2009Nov/0315.html
+ * @see     http://lists.w3.org/Archives/Public/www-style/2009Nov/0317.html
+ * 
+ * @param   CoffeeBuilderControl control  The shadow control
+ * @param   String property               An optional CSS property for the control
+ * @param   Function callback             An optional callback
+ * @return  void
+ */  
+CoffeeBuilderEvents.add('shadow_change', function(control, property, callback){
+  if(!control.fields.checkbox.is(':checked')) {
+    return;
+  }
+  
+  var newvalue = 
+    'rgba(' + 
+      control.getRgb(control.fields.color.val()) + ', ' + 
+      control.fields.opacity.val() / 100 + 
+    ') ' + 
+    control.fields.x.val() + 'px ' + 
+    control.fields.y.val() + 'px ' + 
+    control.fields.blur.val() + 'px 0';
+
+  return $.isFunction(callback) ? callback(newvalue) : control.updateCss(property, newvalue);
+});  
+
+/**
+ * Change event for the checkbox that enables/disables box-shadow.
+ * 
+ * @param   CoffeeBuilderControl control  The shadow control
+ * @param   String property               An optional CSS property for the control
+ * @param   Function callback             An optional callback
+ * @return  void
+ */  
+CoffeeBuilderEvents.add('shadow_checkbox', function(control, property, callback) {
+  var checked = control.fields.checkbox.is(':checked');
+
+  // Disable fields in control if checkbox isn't checked
+  $.each(control.fields, function(control_name, $field) {
+    if(control_name !== 'checkbox') {
+      $field.attr('disabled', !checked);
+    }
+  });
+
+  return checked ? CoffeeBuilderEvents.get('shadow_change')(control, property, callback) : control.updateCss(property, 'none');
+});
+
+/**
+ * Event triggered when a window is resized to ensure that the iframe element
+ * always occupies all available space except for what is designated for the
+ * UI controls.
+ * 
+ * @param   jQuery.Event event     The resize event.
+ * @param   CoffeeBuilder builder  The parent builder
+ * @param   Function callback      An optional callback
+ * @return  void   
+ */
+CoffeeBuilderEvents.add('subpanels_change', function(builder, parent){
+  var width = (builder.width - parent.panels.length + 1) / parent.panels.length;
+  $.each(parent.panels.items, function(index, panel){
+    panel.$title.removeClass('last').css('width', width + 'px');
+  });
+  parent.panels.get(parent.panels.length-1).$title.addClass('last');
+});
+/**
+ * Lock/Unlock event for locks on groups of border controls.
+ * 
+ * @param   jQuery.Event event            The change event
+ * @param   CoffeeBuilderControl control  The text control
+ * @return  void
+ */  
+CoffeeBuilderEvents.add('border_lock', function(event, control){
+  var locked = {};
+
+  control.locked = !control.locked;
+  control.$lock.removeClass('border_lock border_unlock').addClass('border_' + (control.locked ? 'lock' : 'unlock'));
+
+  $.each(control.group.controls.keys, function(index, name) {
+    var lock_control = control.group.controls.get(name);
+
+    $.each(['width','style','color'], function(index, field){
+
+      // Keep track of the first control in the group as it will serve as the
+      // template for all other controls
+      if(name === control.name) {
+        locked[field] = lock_control.fields[field].val();
+        
+      } else {
+
+        // If the group is locked, make all control fields match the original field
+        // and disable them.
+        if(control.locked) {
+          lock_control.fields[field].val(locked[field]).change().attr('disabled', true);
+
+        // Otherwise, enable all controls
+        } else {
+          lock_control.fields[field].removeAttr('disabled');
+        }
+      }
+    });
+  });
+}); 
+
+/**
+ * Initializes border groups by unlocking the group if any of the
+ * controls in the group don't match the first control.
+ * 
+ * @param   CoffeeBuilderControl control  The text control
+ * @return  void
+ */  
+CoffeeBuilderEvents.add('border_initialize', function(control){
+  var first = control.group.controls.get(0);
+  
+  // The first control in the group is not locked, no reason to proceed
+  if(!first.locked) {
+    return;
+  }
+  
+  $.each(['width','style','color'], function(index, field){
+
+    // If the control field doesn't match the corresponding field from the
+    // first control in the group, unlock the control and exit.
+    if(control.fields[field].val() !== first.fields[field].val()) {
+      first.$lock.click();
+      return false;
+
+    // Otherwise, disable the control field
+    } else {
+      control.fields[field].attr('disabled', true);
+    }
+
+  });
+});
+/**
+ * Change event for repeat position control which change repeat of background image
+ * 
+ * @param   jQuery.Event event            The change event
+ * @param   CoffeeBuilderControl control  The repeat control
+ * @param   Function callback             An optional callback
+ * @return  void
+ */
+CoffeeBuilderEvents.add('repeat_change', function (event, control, property, callback) {
+    var newvalue = $(event.currentTarget).val();
+    
+    // Set value for hidden field
+    control.fields.hidden_repeat.val(newvalue);
+    return $.isFunction(callback) ? callback(newvalue) : control.updateCss(property, newvalue);
+});
+/**
+ * Change event for background icon position control which change position icon with XY.
+ * 
+ * @param   jQuery.Event event            The change event
+ * @param   CoffeeBuilderControl control  The background_icon control
+ * @param   Function callback             An optional callback
+ * @return  void
+ */ 
+CoffeeBuilderEvents.add('position_xy', function(control, property, callback){
+	var position = control.fields.position.attr("value");
+    var value = "0% 0%";
+    var x = '0%';
+    var y = '0%';
+    var control_hover, control_selected;
+    
+    if (control.name === 'background_regular') {
+        // Get control background image hover
+        control_hover = control.builder.panels.get('body').panels.get('hover').controls.get('background_hover');
+        
+        // Get control background_icon_selected
+        control_selected = control.builder.panels.get('body').panels.get('selected').controls.get('background_selected');
+    }
+    else if (control.name === 'background_icon'){
+        control_hover = control.builder.panels.get('body').panels.get('hover').controls.get('background_icon_hover');
+        control_selected = control.builder.panels.get('body').panels.get('selected').controls.get('background_icon_selected');
+    }
+    
+    // If checkbox hover state is not checked
+    if ((control_hover) && !control_hover.fields.check_hover.is(':checked')) {
+         control_hover.fields.position.val(position);
+    }
+    
+    // If checkbox selected state is not checked
+    if ((control_selected) && !control_selected.fields.check_hover.is(':checked')) {
+         control_selected.fields.position.val(position);
+    }
+    
+    // Set value position
+    if(position === 'left' || position === 'right' || position === 'center'){
+        
+        // Disable both spin left right when not select custom
+        control.fields.spinleft.attr('disabled','disabled');
+        control.fields.spinright.attr('disabled','disabled');
+        
+        // Disable spin when hover and selected
+        if (control_hover) {
+            control_hover.fields.spinleft.attr('disabled','disabled');
+            control_hover.fields.spinright.attr('disabled','disabled');
+        }
+        
+        if (control_selected) {
+            control_selected.fields.spinleft.attr('disabled','disabled');
+            control_selected.fields.spinright.attr('disabled','disabled');
+        }
+        
+        // Set value for position
+        if (position === 'left') {
+            value = "0% 10%";
+        }
+        else if (position === 'right') {
+            value = "95% 10%";
+        }
+        else if (position === 'center') {
+            value = "50% 10%";
+        }
+    }
+    else{
+        // Enable both spin left right when select custom
+        control.fields.spinleft.removeAttr('disabled');
+        control.fields.spinright.removeAttr('disabled');
+        
+        // Get value from both spin
+        if (control.fields.spinleft.val()) {
+            x = control.fields.spinleft.val() + "%";
+            
+            // When checkbox hover state is not checked
+            if ((control_hover) && !control_hover.fields.check_hover.is(':checked')) {
+                control_hover.fields.spinleft.val(control.fields.spinleft.val());
+            }
+            
+            // When checkbox selected state is not checked
+            if ((control_selected) && !control_selected.fields.check_hover.is(':checked')) {
+                control_selected.fields.spinleft.val(control.fields.spinleft.val());
+            }
+        }
+        if (control.fields.spinright.val()) {
+            y = control.fields.spinright.val() + "%";
+            
+            // When checkbox hover state is not checked
+            if ((control_hover) && !control_hover.fields.check_hover.is(':checked')) {
+                control_hover.fields.spinright.val(control.fields.spinright.val());
+            }
+            
+            // When checkbox selected state is not checked
+            if ((control_selected) && !control_selected.fields.check_hover.is(':checked')) {
+                control_selected.fields.spinright.val(control.fields.spinright.val());
+            }
+        }
+        value = x + " " + y;
+    }
+     return $.isFunction(callback) ? callback(value) : control.updateCss(property, value);
+});
+
+/**
+ * Change event for background color control which change background color and transparent.
+ * 
+ * @param   jQuery.Event event            The change event
+ * @param   CoffeeBuilderControl control  The background-transparent control
+ * @param   Function callback             An optional callback
+ * @return  void
+ */  
+CoffeeBuilderEvents.add('change_background_color', function (control, property, callback) {
+    var newvalue = control.fields.bgcolor.val() + ' !important';
+    return $.isFunction(callback) ? callback(newvalue) : control.updateCss(property,newvalue);
+});
+
+/**
+ * Change event for background color control which check or uncheck checkbox transparent.
+ * 
+ * @param   jQuery.Event event            The change event
+ * @param   CoffeeBuilderControl control  The background-transparent control
+ * @param   Function callback             An optional callback
+ * @return  void
+ */ 
+CoffeeBuilderEvents.add('background_checkbox', function (control, property, callback) {
+    var checked = control.fields.checkbox.is(':checked');
+    var newvalue = control.fields.bgcolor.val();
+    
+    if (control.name === 'background_regular') {
+        
+        // Get control background hover
+        var control_hover = control.builder.panels.get('body').panels.get('hover').controls.get('background_hover');
+        
+        (checked) ? control_hover.fields.checkbox.attr('checked', 'checked') : control_hover.fields.checkbox.removeAttr('checked');
+        
+        CoffeeBuilderEvents.get('colorpicker_change')(newvalue, control_hover, control_hover.fields.bgcolor, 'color');
+        control_hover.fields.bgcolor.val(newvalue);
+    }
+    // Set value for hidden field
+    (checked) ? control.fields.hidden_color.val('transparent') : control.fields.hidden_color.val(newvalue);
+    
+    // Disable fields in control if checkbox isn't checked
+    return !checked ? CoffeeBuilderEvents.get('change_background_color')(control, property, callback) : control.updateCss(property,"transparent !important");
+});
+
+/**
+ * Change event for upload background image control which delete background image
+ * 
+ * @param   jQuery.Event event            The click event
+ * @param   CoffeeBuilderControl control  The upload_background_image control
+ * @param   Function callback             An optional callback
+ * @return  void
+ */ 
+CoffeeBuilderEvents.add('delete_background', function (control, property, callback) {
+    var isNotDelete = control.fields.field_element.val() === "";
+    var control_hover, control_selected;
+    var newvalue = "none";
+    
+    if (!isNotDelete) {
+        alert('Delete successfully');
+    }
+    if (control.fields.hidden_delete_file.val() !== undefined) {
+        $.ajax({
+            url: "action/deleteFile.php",
+            type: "POST",
+            data: {
+                    filepath: control.fields.hidden_delete_file.val()
+            } 
+        });
+        
+        if (control.name === 'background_regular') {
+            // Get control background image hover
+            control_hover = control.builder.panels.get('body').panels.get('hover').controls.get('background_hover');
+            
+            // Get control background image hover
+            control_selected = control.builder.panels.get('body').panels.get('selected').controls.get('background_selected');
+            
+        }
+        else if (control.name === 'background_icon'){
+            control_hover = control.builder.panels.get('body').panels.get('hover').controls.get('background_icon_hover');
+            
+            control_selected = control.builder.panels.get('body').panels.get('selected').controls.get('background_icon_selected');
+        }
+        
+        // If checkbox hover state is not checked
+        if ((control_hover) && !control_hover.fields.check_hover.is(':checked')) {
+            control_hover.$element.find('input:text').val('');
+            control_hover.updateCss(property, newvalue);
+        }
+        
+        // If checkbox selected state is not checked
+        if ((control_selected) && !control_selected.fields.check_hover.is(':checked')) {
+            control_selected.$element.find('input:text').val('');
+            control_selected.updateCss(property, newvalue);
+        }
+        
+        // Clear hidden file
+        control.fields.hidden_file.val('');
+    }
+ 
+    if (control.fields.spinleft !== undefined) {
+        control.fields.spinleft.val(0);
+        control.fields.spinright.val(0);
+     }
+    
+    return $.isFunction(callback) ? callback(newvalue) : control.updateCss(property, newvalue);
+});
+
+/**
+ * Event get value for background image
+ * @param CoffeeBuilderControl control  The background_image control
+ * @return void
+ */
+CoffeeBuilderEvents.add('get_value_background_hover', function(control) {
+    var regular = control.builder.panels.get('body').panels.get('regular').controls.get('background_regular');
+    // Set color default for hover or selected
+    CoffeeBuilderEvents.get('colorpicker_change')(regular.fields.bgcolor.val() + ' !important', control, control.fields.bgcolor, 'background-color');
+    
+    // Set check transparent
+    var checked = regular.fields.checkbox.is(':checked');
+    (checked) ? control.fields.checkbox.attr('checked', 'checked') : control.fields.checkbox.removeAttr('checked');
+    
 });
 
 var
@@ -2780,6 +3780,213 @@ var
   ],
   
   /**
+   * Data API methods for the jQuery.fn.coffeeBuilder plugin.
+   *
+   * These methods return data instead of a reference to a jQuery object. 
+   */
+  data_api = [
+      /**
+       * Returns a stylesheet representing all current customizations.
+       *
+       * <code>
+       *
+       * // Just get the current control customizations
+       * $('iframe').coffeeBuilder('getStyleSheet');
+       *
+       * // Get the full stylesheet
+       * $('iframe').coffeeBuilder('getStyleSheet', true);
+       *
+       * </code>
+       *
+       * @param   boolean full  If the full stylesheet (not just customizations) should be returned.
+       * @return  string
+       */  
+      'getStyleSheet'
+      
+      /**
+       * Returns a stylesheet representing all current customizations for a given
+       * panel.
+       *
+       * <code>
+       *  
+       * // Just get the current control customizations
+       * $('iframe').coffeeBuilder('getStyleSheetForPanel', 'container');
+       *
+       * // Get the full stylesheet
+       * $('iframe').coffeeBuilder('getStyleSheetForPanel', 'container', true);
+       *
+       * </code>
+       *
+       * @param   string panel  The name of the panel to get the customizations for
+       * @param   boolean full  If the full stylesheet (not just customizations) should be returned.       
+       * @return  string
+       */      
+    , 'getStyleSheetForPanel'
+    
+      /**
+       * Returns a stylesheet representing all current customizations for a given
+       * panel's control.
+       *
+       * <code>
+       *  
+       * // Just get the current control customizations
+       * $('iframe').coffeeBuilder('getStyleSheetForPanelControl', 'container', 'width');
+       *
+       * // Get the full stylesheet
+       * $('iframe').coffeeBuilder('getStyleSheetForPanelControl', 'container', 'width', true);
+       *
+       * </code>
+       *
+       * @param   string panel    The name of the panel where the control can be found
+       * @param   string control  The name of the control to get the customizations for
+       * @param   boolean full    If the full stylesheet (not just customizations) should be returned.       
+       * @return  string
+       */    
+    , 'getStyleSheetForPanelControl'
+    
+      /**
+       * Returns a stylesheet representing all current customizations for a given
+       * panel's sub panel.
+       *
+       * <code>
+       *  
+       * // Just get the current control customizations
+       * $('iframe').coffeeBuilder('getStyleSheetForSubPanel', 'body', 'title');
+       *
+       * // Get the full stylesheet
+       * $('iframe').coffeeBuilder('getStyleSheetForSubPanel', 'body', 'title', true);
+       *
+       * </code>
+       *
+       * @param   string panel      The name of the panel where the sub panel can be found
+       * @param   string sub_panel  The name of the sub_panel to get the customizations for
+       * @param   boolean full      If the full stylesheet (not just customizations) should be returned.       
+       * @return  string
+       */
+    , 'getStyleSheetForSubPanel'
+    
+      /**
+       * Returns a stylesheet representing all current customizations for a given
+       * sub panel's control.
+       *
+       * <code>
+       *
+       * // Just get the current control customizations
+       * $('iframe').coffeeBuilder('getStyleSheetForSubPanelControl', 'body', 'title', 'padding');
+       *
+       * // Get the full stylesheet
+       * $('iframe').coffeeBuilder('getStyleSheetForSubPanelControl', 'body', 'title', 'padding', true);
+       *
+       * </code>
+       *
+       * @param   string panel      The name of the panel where the sub panel can be found
+       * @param   string sub_panel  The name of the sub panel where the control can be found
+       * @param   string control    The name of the control to get the customizations for
+       * @param   boolean full      If the full stylesheet (not just customizations) should be returned.       
+       * @return  string
+       */
+    , 'getStyleSheetForSubPanelControl'
+    
+      /**
+       * Gets/Sets data object for all panels/controls.
+       *
+       * <code>
+       *
+       * // Getter
+       * $('iframe').coffeeBuilder('data');
+       *
+       * // Setter
+       * $('iframe').coffeeBuilder('data', {fadein: 'iscool'});
+       *
+       * </code>
+       *
+       * @param   Object data  The data object (optional, used for setting)
+       * @return  Object
+       */  
+    , 'data'
+
+      /**
+       * Gets/Sets data object for a given panel.
+       *
+       * <code>
+       *  
+       * // Getter
+       * $('iframe').coffeeBuilder('dataForPanel', 'container');
+       *
+       * // Setter
+       * $('iframe').coffeeBuilder('dataForPanel', 'container', {fadein: 'iscool'});
+       *
+       * </code>
+       *
+       * @param   string panel  The name of the panel to get the data object for
+       * @param   Object data   The data object (optional, used for setting)
+       * @return  Object
+       */      
+    , 'dataForPanel'
+    
+      /**
+       * Gets/Sets data object for a given panel's control.
+       *
+       * <code>
+       *  
+       * // Getter
+       * $('iframe').coffeeBuilder('dataForPanelControl', 'container', 'width');
+       *
+       * // Setter
+       * $('iframe').coffeeBuilder('dataForPanelControl', 'container', 'width', {fadein: 'iscool'});
+       *
+       * </code>
+       *
+       * @param   string panel    The name of the panel where the control can be found
+       * @param   string control  The name of the control to get the customizations for
+       * @param   Object data     The data object (optional, used for setting)
+       * @return  Object
+       */    
+    , 'dataForPanelControl'
+    
+      /**
+       * Gets/Sets data object for a given panel's sub panel.
+       *
+       * <code>
+       *  
+       * // Getter
+       * $('iframe').coffeeBuilder('dataForSubPanel', 'body', 'title');
+       *
+       * // Setter
+       * $('iframe').coffeeBuilder('dataForSubPanel', 'body', 'title', {fadein: 'iscool'});
+       *
+       * </code>
+       *
+       * @param   string panel      The name of the panel where the sub panel can be found
+       * @param   string sub_panel  The name of the sub_panel to get the customizations for
+       * @param   Object data       The data object (optional, used for setting)
+       * @return  Object
+       */
+    , 'dataForSubPanel'
+
+      /**
+       * Gets/Sets data object for a given sub panel's control.
+       *
+       * <code>
+       *
+       * // Getter
+       * $('iframe').coffeeBuilder('dataForSubPanelControl', 'body', 'title', 'padding');
+       *
+       * // Setter
+       * $('iframe').coffeeBuilder('dataForSubPanelControl', 'body', 'title', 'padding', {fadein: 'iscool'});
+       *
+       * </code>
+       *
+       * @param   string panel      The name of the panel where the sub panel can be found
+       * @param   string sub_panel  The name of the sub panel where the control can be found
+       * @param   string control    The name of the control to get the customizations for
+       * @param   Object data       The data object (optional, used for setting)
+       * @return  Object
+       */
+    , 'dataForSubPanelControl'
+  ],
+  
+  /**
    * Public API methods for the jQuery.coffeeBuilder plugin.
    *
    * <code>
@@ -2844,7 +4051,7 @@ var
       /**
        * Public API methods for the jQuery.coffeeBuilder.controls plugin.
        */      
-    , controls:   {
+    , controls: {
           'object': CoffeeBuilderControls
         , methods: [
                 /**
@@ -2872,6 +4079,78 @@ var
                 'add'
           ]
       }
+      
+        /**
+         * Public API methods for the jQuery.coffeeBuilder.notifications plugin.
+         */      
+      , notifications: {
+            'object': CoffeeBuilderNotifications
+          , methods: [
+                /**
+                 * Adds a new obvserver for a given notification type.
+                 *
+                 * <code>
+                 *
+                 * var observer = function(selector, property, value){ 
+                 *   console.log(selector + '{' + property + ':' + value + '};');
+                 * };
+                 * $.coffeeBuilder.notifications('addObserver', 'updateCss', observer);
+                 *
+                 * </code>
+                 *
+                 * @param   String name        The name of the notification type to observe.
+                 * @param   Function observer  The function to call when the notification is posted.
+                 * @return  void
+                 */          
+                'addObserver'
+                
+                /**
+                 * Removes an obvserver from all notifications or a given notification type
+                 * if the name parameter is provided.
+                 *
+                 * <code>
+                 *
+                 * var observer = function(selector, property, value){ 
+                 *   console.log(selector + '{' + property + ':' + value + '};');
+                 * };
+                 *
+                 * // Remove by name
+                 * $.coffeeBuilder.notifications('removeObserver', 'updateCss', observer);
+                 *
+                 * // Remove for all names
+                 * $.coffeeBuilder.notifications('removeObserver', observer);
+                 *
+                 * </code>
+                 *
+                 * @param   String name        The name of the notification type to remove from.
+                 * @param   Function observer  The function to remove.
+                 * - OR -
+                 * @param   Function observer  The function to remove from all notifications.
+                 * 
+                 * @return  void
+                 */                
+              , 'removeObserver'
+              
+                /**
+                 * Post a notification to all registered observers.
+                 *
+                 * <code>
+                 *
+                 * var
+                 *   selector = 'body',
+                 *   property = 'width',
+                 *   value = '500px';
+                 *
+                 * $.coffeeBuilder.notifications('postNotification', 'updateCss', selector, property, value);
+                 *
+                 * </code>
+                 *
+                 * @param   String name  The name of the notification type to post.
+                 * @return  void
+                 */              
+              , 'postNotification'
+            ]
+        }      
   };
 
 /**
@@ -2889,6 +4168,10 @@ $.fn.coffeeBuilder = function(option){
 
   // Call the api method if necessary
   if(typeof option === 'string') {
+    if($.inArray(option, data_api) !== -1) {
+      return data[option].apply(data, Array.prototype.slice.call(arguments, 1));
+    } 
+    
     if($.inArray(option, dom_api) !== -1) {
       data[option].apply(data, Array.prototype.slice.call(arguments, 1));
     } else {
@@ -2918,4 +4201,4 @@ $.each(utility_apis, function(name, api){
   };
 });
 
-//}(jQuery, window);
+}(jQuery, window);
