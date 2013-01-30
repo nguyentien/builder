@@ -391,6 +391,7 @@ body { overflow:hidden; }
    border-bottom:1px solid rgb(225,225,225);
    border-left:1px solid rgb(193,193,193);
 }
+
 #controls select.combo_right {
    font-size:13px;
    width:165px;
@@ -881,9 +882,3 @@ body { overflow:hidden; }
 #docContainer #fb-submit-button-div.selected-object {
    border: dashed 1px grey !important;
 }
-
-.button_size{
-	width:180px;
-}
-
-

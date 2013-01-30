@@ -1,10 +1,10 @@
 /**
  * Lock/Unlock event for locks on groups of border controls.
- * 
+ *
  * @param   jQuery.Event event            The change event
  * @param   CoffeeBuilderControl control  The text control
  * @return  void
- */  
+ */
 CoffeeBuilderEvents.add('border_lock', function(event, control){
   var locked = {};
 
@@ -20,7 +20,7 @@ CoffeeBuilderEvents.add('border_lock', function(event, control){
       // template for all other controls
       if(name === control.name) {
         locked[field] = lock_control.fields[field].val();
-        
+
       } else {
 
         // If the group is locked, make all control fields match the original field
@@ -35,23 +35,23 @@ CoffeeBuilderEvents.add('border_lock', function(event, control){
       }
     });
   });
-}); 
+});
 
 /**
  * Initializes border groups by unlocking the group if any of the
  * controls in the group don't match the first control.
- * 
+ *
  * @param   CoffeeBuilderControl control  The text control
  * @return  void
- */  
+ */
 CoffeeBuilderEvents.add('border_initialize', function(control){
   var first = control.group.controls.get(0);
-  
+
   // The first control in the group is not locked, no reason to proceed
   if(!first.locked) {
     return;
   }
-  
+
   $.each(['style','width','color'], function(index, field){
 
     // If the control field doesn't match the corresponding field from the

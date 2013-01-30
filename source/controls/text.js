@@ -1,8 +1,8 @@
 /**
  * Control used for managing text-related properties.
- */  
+ */
 CoffeeBuilderControls.add('text', {
-  
+
     /**
      * Given a manifest, checks if this control is the appropriate type to
      * manage the properties specified in the manifest.
@@ -13,7 +13,7 @@ CoffeeBuilderControls.add('text', {
     check: function(manifest) {
       return manifest.type === 'text';
     }
-    
+
     /**
      * Initializes the control by adding the following instance variables:
      *
@@ -22,13 +22,10 @@ CoffeeBuilderControls.add('text', {
      * this.props.css  // (optional) CSS properties managed by the control
      *
      * @return  void
-     */      
+     */
   , init: function() {
       var
         fonts = '',
-        family = this.getCss('font-family') || 'Helvetica, Arial, sans-serif',
-        size = this.getCss('font-size') || '13px',
-        color = this.getCss('color') || '#000000',
         $text = this.getElement(true);
 
       // Fonts list
@@ -57,10 +54,10 @@ CoffeeBuilderControls.add('text', {
       }, function(name, value) {
         fonts += '<option value="' + value + '" title="' + value + '">' + name + '</option>';
       });
-      
+
       // Set the CSS properties
       this.props.css = ['font-family','font-size','color'];
-      
+
       // Set the element
       this.$element = $(
         '<div class="control_group text_group">' +
@@ -70,17 +67,17 @@ CoffeeBuilderControls.add('text', {
         ' <label class="label_grouped"><input type="text" class="color_right color_picker"></label>' +
         '</div>'
       );
-      
+
       // Core elements
       this.fields = {
-        family: this.$element.find('select').val(family),
-        size: this.$element.find('input.size_field').val(parseInt(size, 10)),
+        family: this.$element.find('select'),
+        size: this.$element.find('input.size_field'),
         input: this.$element.find('input.description_text'),
-        color: this.$element.find('input.color_picker').val(color)
+        color: this.$element.find('input.color_picker')
       };
-      
+
       // Set the title
-      this.setTitle(this.$element.find('span:first'));        
+      this.setTitle(this.$element.find('span:first'));
 
       // Initialize the color picker
       CoffeeBuilderEvents.get('colorpicker_initialize')(this, this.fields.color, 'color');
@@ -90,10 +87,7 @@ CoffeeBuilderControls.add('text', {
 
         this.fields.input.val($.trim($text.text())).change($.proxy(this.textChange, this)).keyup($.proxy(this.textChange, this));
         this.fields.family.change($.proxy(this.fontFamilyChange, this));
-        
-        CoffeeBuilderEvents.get('initialize_sizers')(
-          this.fields.size.change($.proxy(this.fontSizeChange, this)).keyup($.proxy(this.fontSizeKeyup, this))
-        );
+        this.fields.size.change($.proxy(this.fontSizeChange, this)).keyup($.proxy(this.fontSizeKeyup, this));
 
       // Otherwise, disable controls
       } else {
@@ -101,44 +95,62 @@ CoffeeBuilderControls.add('text', {
           field.attr('disabled', true);
         });
       }
+
+      this.refresh();
     }
-    
+
+    /**
+     * Refreshes the control to reflect the current DOM value.
+     *
+     * @return  void
+     */
+  , refresh: function() {
+      var
+        family = this.getCss('font-family') || 'Helvetica, Arial, sans-serif',
+        size = this.getCss('font-size') || '13px',
+        color = this.getCss('color') || '#000000';
+
+      this.fields.family.val(family);
+      CoffeeBuilderEvents.get('initialize_sizers')(this.fields.size.val(parseInt(size, 10)));
+      CoffeeBuilderEvents.get('colorpicker_input_change')(color, this, this.fields.color, 'color', function(){});
+    }
+
     /**
      * Event listener (proxy) for the font-size input field's `change()` event.
      *
      * @param  jQuery.Event event  The font-size input `change()` event.
      * @param  Boolean
-     */      
+     */
   , fontSizeChange: function(event) {
       return CoffeeBuilderEvents.get('sizer_change')(event, this, 'font-size');
     }
-  
+
     /**
      * Event listener (proxy) for the font-size input field's `keyup()` event.
      *
      * @param  jQuery.Event event  The font-size input `keyup()` event.
      * @param  Boolean
-     */ 
+     */
   , fontSizeKeyup: function(event) {
       return CoffeeBuilderEvents.get('sizer_keyup')(event, this, 'font-size');
-    }  
+    }
 
     /**
      * Event listener (proxy) for the font-family select field's `change()` event.
      *
      * @param  jQuery.Event event  The input `keyup()` event.
      * @param  Boolean
-     */      
+     */
   , fontFamilyChange: function(event) {
       return CoffeeBuilderEvents.get('select_change')(event, this, 'font-family');
-    }          
-    
+    }
+
     /**
      * Event listener (proxy) for the text input field's `change()` event.
      *
      * @param  jQuery.Event event  The input `change()` event.
      * @param  Boolean
-     */      
+     */
   , textChange: function(event) {
       return CoffeeBuilderEvents.get('text_change')(event, this);
     }

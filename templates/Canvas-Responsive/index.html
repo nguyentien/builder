@@ -84,4 +84,12 @@
         <h2><span></span></h2>
     </div>
 </body>
+<script type="text/javascript" src="js/jquery-1.8.2.min.js"></script>
+<script type="text/javascript">
+$(function(){
+   if ($.isFunction(window.parent.coffeeBuilderInit)) {
+      window.parent.coffeeBuilderInit();
+   }
+});
+</script>
 </html>

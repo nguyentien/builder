@@ -16,19 +16,19 @@
  * }
  *
  * CoffeeBuilderNotifications.addObserver('drawRect', observer);
- * 
+ *
  * function drawRect(x, y, width, height, color) {
  *   var canvas = document.getElementById("canvas");
  *   var ctx = canvas.getContext("2d");
- * 
+ *
  *   if(color){
  *     ctx.fillStyle = color;
  *   }
- * 
+ *
  *   ctx.fillRect (x, y, width, height);
  *   CoffeeBuilderNotifications.postNotification('drawRect', x, y, width, height);
  * }
- * 
+ *
  * drawRect(10, 10, 200, 200);
  * drawRect(25, 25, 170, 170, "rgb(200,0,0)");
  *
@@ -52,11 +52,11 @@ var CoffeeBuilderNotifications = {
       if(!$.isFunction(observer)) {
         $.error('observer must be a function');
       }
-      
+
       if(!$.isArray(this.observerCollection[name])) {
         this.observerCollection[name] = [];
       }
-      
+
       this.observerCollection[name].push(observer);
     }
 
@@ -68,7 +68,7 @@ var CoffeeBuilderNotifications = {
      * @param   Function observer  The function to remove.
      * - OR -
      * @param   Function observer  The function to remove from all notifications.
-     * 
+     *
      * @return  void
      */
   , removeObserver: function(name, observer){
@@ -82,7 +82,7 @@ var CoffeeBuilderNotifications = {
 
         return;
       }
-    
+
       if(!$.isArray(this.observerCollection[name])) {
         $.error('invalid observer: ' + name);
       }
@@ -102,7 +102,7 @@ var CoffeeBuilderNotifications = {
       if(!$.isArray(this.observerCollection[name])) {
         return;
       }
-    
+
       var notification_arguments = Array.prototype.slice.call(arguments, 1);
 
       $.each(this.observerCollection[name], function(index, observer){

@@ -11,7 +11,7 @@ var CoffeeBuilderCollection = function() {
 };
 CoffeeBuilderCollection.prototype = {
     constructor: CoffeeBuilderCollection
-    
+
     /**
      * Adds a new item to the collection.
      *
@@ -21,30 +21,32 @@ CoffeeBuilderCollection.prototype = {
      * @return  Object
      */
   , add: function(key, item, position) {
+      key = key.toString();
+
       if($.inArray(key, this.keys) !== -1) {
         $.error('Index already defined: ' + key);
       }
-      
+
       if(position === undefined) {
         position = this.length;
       }
-      
+
       if(position > this.length) {
         $.error('Position is larger than collection length: ' + position);
       }
-    
+
       if(position === this.length) {
         this.keys.push(key);
       } else {
-        this.keys.splice(position, 0, key);        
-      }     
+        this.keys.splice(position, 0, key);
+      }
 
       this.items[key] = item;
       this.length++;
 
       return this.items[key];
     }
-    
+
     /**
      * Removes an item from the collection.
      *
@@ -59,20 +61,38 @@ CoffeeBuilderCollection.prototype = {
       this.keys.splice(index.numeric,1);
       delete this.items[index.named];
       this.length--;
-      
+
       return deleted;
     }
-    
+
+    /**
+     * Renames an item from the collection.
+     *
+     * @param   String|Number oldkey  A string key or numeric index to idenfity the item.
+     * @param   String        newkey  A new string key to idenfity the item.
+     * @return  Object
+     */
+  , rename: function(oldkey, newkey) {
+      var index = this.getIndex(oldkey);
+      newkey = newkey.toString();
+
+      this.items[newkey] = this.items[index.named];
+      delete this.items[index.named];
+
+      this.keys[index.numeric] = newkey;
+      return this.items[newkey];
+    }
+
     /**
      * Gets an item from the collection.
      *
      * @param   String|Number key  A string key or numeric index to idenfity the item.
      * @return  Object
-     */    
+     */
   , get: function(key) {
       return this.items[this.getIndex(key).named];
     }
-    
+
     /**
      * Given a string key or numeric index, returns an object that holds both
      * the named and numeric equivalent indexes for the collection.
@@ -80,7 +100,7 @@ CoffeeBuilderCollection.prototype = {
      * Return format:
      * --------------
      * {
-     *   numeric: 5, 
+     *   numeric: 5,
      *   named: 'myindex'
      * }
      *
@@ -88,31 +108,31 @@ CoffeeBuilderCollection.prototype = {
      * @return  Object
      */
   , getIndex: function(key) {
-      return typeof key === 'number' ? { numeric: key, named: this.getKeyForIndex(key) } : { numeric: this.getIndexForKey(key), named: key  };
+      return typeof key === 'number' ? { numeric: key, named: this.getKeyForIndex(key) } : { numeric: this.getIndexForKey(key), named: key.toString() };
     }
-    
+
     /**
      * Gets the string equivalent of a provided numeric index.
      *
      * @param   Number index  A numeric index to get the string key for.
      * @return  String
-     */    
+     */
   , getKeyForIndex: function(index) {
       if(typeof index === 'number' && index === ~~index && index < this.length) {
         return this.keys[index];
       }
-      
-      $.error('Invalid index provided: ' + index);    
+
+      $.error('Invalid index provided: ' + index);
     }
-    
+
     /**
      * Gets the numeric equivalent of a provided string key.
      *
      * @param   String key  A string key to get the numeric index for.
      * @return  String
-     */    
+     */
   , getIndexForKey: function(key) {
-      var index = $.inArray(key, this.keys);
+      var index = $.inArray(key.toString(), this.keys);
       if(index !== -1) {
         return index;
       }

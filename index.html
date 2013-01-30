@@ -1,30 +1,258 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en">
 <head>
-	<meta charset="utf-8">
-	<title>Menu builder</title>
-	<link rel="stylesheet" type="text/css" href="css/normalize.css">
-	<link rel="stylesheet" type="text/css" href="css/mac_colorpicker.css">
-	<link rel="stylesheet" type="text/css" href="css/mac_ui.css">
-	<link rel="stylesheet" type="text/css" href="css/jquery.coffeeBuilder.css">
-	<link rel="stylesheet" type="text/css" href="css/ui/jquery-ui-1.9.1.custom.min.css">
-	<link rel="stylesheet" type="text/css" href="css/top_menu.css">
-	<link rel="stylesheet" type="text/css" href="css/style.css">
+   <title>CoffeeBuilder Sample</title>
+   <meta charset="utf-8">
+   <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css">
+   <link rel="stylesheet" type="text/css" href="stylesheets/mac_colorpicker.css">
+   <link rel="stylesheet" type="text/css" href="stylesheets/mac_ui.css">
+   <link rel="stylesheet" type="text/css" href="stylesheets/vader/jquery-ui-1.9.2.custom.min.css">
+   <link rel="stylesheet" type="text/css" href="stylesheets/jquery.coffeeBuilder.css">
+   <script type="text/javascript" src="javascript/jquery-1.8.2.min.js"></script>
+   <script type="text/javascript" src="javascript/jquery-ui-1.9.2.custom.min.js"></script>
+   <script type="text/javascript" src="javascript/colorpicker.js"></script>
+   <script type="text/javascript" src="javascript/put.js"></script>
+   <script type="text/javascript" src="javascript/jquery.coffeeBuilderSlider.js"></script>
+   <script type="text/javascript" src="javascript/jquery.coffeeBuilder.js"></script>
+   <script>
+   $(function () {
+     var
+       $iframe = $('iframe'),
+       $window = $(window);
+
+     coffeeBuilderInit = function () {
+       $('#preview').coffeeBuilder({
+         design_mode: true,
+         manifest: {
+           panels: {
+             page: {
+               name: "Page",
+               customizations: {
+                 fadein: {
+                   type: 'select',
+                   name: "Fade In"
+                 },
+                 pickone: {
+                   type: 'select_number',
+                   name: "Pick One",
+                   options: {
+                     "default": 3,
+                     min: 0.5,
+                     max: 5,
+                     step: 0.5
+                   }
+                 },
+                 background: {
+                   name: "Background",
+                   selectors: {
+                     body: [
+                       "background"],
+                     html: [
+                       "background"]
+                   }
+                 },
+                 cactus: {
+                   name: "Cactus",
+                   selectors: {
+                     '#cactus p': [
+                       "background"]
+                   }
+                 }
+               }
+             },
+             container: {
+               name: "Container",
+               customizations: {
+                 width: {
+                   name: "Width",
+                   selectors: {
+                     "#container": [
+                       "width"]
+                   },
+                   'default': "500px"
+                 },
+                 border: {
+                   type: "group",
+                   name: "Border",
+                   customizations: {
+                     top: {
+                       name: "Top",
+                       selectors: {
+                         "#container": [
+                           "border-top"]
+                       }
+                     },
+                     right: {
+                       name: "Right",
+                       selectors: {
+                         "#container": [
+                           "border-right"]
+                       }
+                     },
+                     bottom: {
+                       name: "Bottom",
+                       selectors: {
+                         "#container": [
+                           "border-bottom"]
+                       }
+                     },
+                     left: {
+                       name: "Left",
+                       selectors: {
+                         "#container": [
+                           "border-left"]
+                       }
+                     }
+                   }
+                 },
+                 dropshadow: {
+                   name: "Shadow",
+                   selectors: {
+                     "#container": [
+                       "box-shadow"]
+                   }
+                 }
+               }
+             },
+             title: {
+               name: "Title",
+               subpanels: {
+                 regular: {
+                   name: "Regular",
+                   customizations: {
+                     background: {
+                       name: "Background",
+                       selectors: {
+                         "#header": [
+                           "background"]
+                       }
+                     },
+                     heading: {
+                       name: "Heading",
+                       "selectors": {
+                         "#header h1": []
+                       },
+                       "type": "text"
+                     },
+                     padding: {
+                       name: "Padding",
+                       "selectors": {
+                         "#header h1": [
+                           'padding']
+                       }
+                     },
+                     margin: {
+                       name: "Margin",
+                       "selectors": {
+                         "#header h1": [
+                           'margin']
+                       },
+                       "options": {
+                         "properties": [
+                           'top',
+                           'bottom']
+                       }
+                     }
+                   }
+                 },
+                 hover: {
+                   name: "hover",
+                   states: {"#header":"coffeeBuilderHover"},
+                   customizations: {
+                     background: {
+                       name: "Background",
+                       selectors: {
+                         "#header:hover": [
+                           "background"]
+                       }
+                     },
+                     padding: {
+                       name: "Padding",
+                       "selectors": {
+                         "#header:hover h1": [
+                           'padding']
+                       }
+                     },
+                     margin: {
+                       name: "Margin",
+                       "selectors": {
+                         "#header:hover h1": [
+                           'margin']
+                       },
+                       "options": {
+                         "properties": [
+                           'top',
+                           'bottom']
+                       }
+                     }
+                   }
+                 }
+               }
+             },
+             body: {
+               name: "Body",
+               subpanels: {
+                 nav: {
+                   name: "Menu",
+                   customizations: {
+                     background: {
+                       name: "Background",
+                       selectors: {
+                         "#menu": [
+                           "background"]
+                       }
+                     }
+                   }
+                 },
+                 content: {
+                   name: "Content",
+                   customizations: {
+                     background: {
+                       name: "Background",
+                       selectors: {
+                         "#content": [
+                           "background"]
+                       }
+                     }
+                   }
+                 },
+                 footer: {
+                   name: "Foot",
+                   customizations: {
+                     background: {
+                       name: "Background",
+                       selectors: {
+                         "#footer": [
+                           "background"]
+                       }
+                     },
+                     text: {
+                       name: "Text",
+                       "selectors": {
+                         "#footer": []
+                       },
+                       "type": "text"
+                     }
+                   }
+                 }
+               }
+             }
+           }
+         }
+       });
+
+       $window.resize();
+     };
+
+     $window.resize(function(){
+       $iframe.css('height', ($window.height() - 55) + 'px');
+     });
+   });
+   </script>
 </head>
-
 <body>
-<div class="ui-layout-center" id="layout-center">
-	<iframe id="preview" src="theme/Canvas-Responsive/index.html"></iframe>
-</div>
-
-<!-- Javascript -->
-<script type="text/javascript" src="js/jquery-1.8.2.min.js"></script>
-<script type="text/javascript" src="js/jquery-ui-1.9.1.custom.min.js"></script>
-<script type="text/javascript" src="js/colorpicker.js"></script>
-<script type="text/javascript" src="js/jquery.coffeeBuilder.js"></script>
-<script type="text/javascript" src="js/jquery.topMenu.js"></script>
-<script type="text/javascript" src="js/put.js"></script>
-<script type="text/javascript" src="js/script.js"></script>
-<!-- End javascript -->
+  <div class="ui-layout-center" id="layout-center">
+    <iframe id="preview" src="iframe.html" frameBorder="0"></iframe>
+  </div>
 </body>
 </html>

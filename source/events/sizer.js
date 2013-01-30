@@ -1,10 +1,10 @@
 /**
- * Initializes input sizers by adding the `oldvalue` data property which 
- * enables sizer controls to keep track of previous values in case validation 
+ * Initializes input sizers by adding the `oldvalue` data property which
+ * enables sizer controls to keep track of previous values in case validation
  * fails and values need to be reset.
- * 
+ *
  * @param   jQuery $sizers  The input sizers
- * @return  void   
+ * @return  void
  */
 CoffeeBuilderEvents.add('initialize_sizers', function($sizers){
   $sizers.each(function(){
@@ -15,7 +15,7 @@ CoffeeBuilderEvents.add('initialize_sizers', function($sizers){
 
 /**
  * Change event for sizer controls which updates CSS related to a sizer.
- * 
+ *
  * @param   jQuery.Event event            The change event
  * @param   CoffeeBuilderControl control  The sizer control
  * @param   String property               An optional CSS property for the control
@@ -23,7 +23,7 @@ CoffeeBuilderEvents.add('initialize_sizers', function($sizers){
  * @return  void
  */
 CoffeeBuilderEvents.add('sizer_change', function(event, control, property, callback){
-  var 
+  var
     $field = $(event.currentTarget),
     min = parseInt($field.attr('min'), 10),
     max = parseInt($field.attr('max'), 10),
@@ -48,15 +48,15 @@ CoffeeBuilderEvents.add('sizer_change', function(event, control, property, callb
 
 /**
  * Keyup event for sizer controls which updates CSS related to a sizer.
- * 
+ *
  * @param   jQuery.Event event            The change event
  * @param   CoffeeBuilderControl control  The sizer control
  * @param   String property               An optional CSS property for the control
  * @param   Function callback             An optional callback
  * @return  void
- */  
+ */
 CoffeeBuilderEvents.add('sizer_keyup', function(event, control, property, callback){
-  var 
+  var
     $field = $(event.currentTarget),
     min = parseInt($field.attr('min'), 10),
     max = parseInt($field.attr('max'), 10),
@@ -78,7 +78,7 @@ CoffeeBuilderEvents.add('sizer_keyup', function(event, control, property, callba
 /**
  * Reset event for sizer controls which is used internally by the other sizer
  * events to reset the sizer values.
- * 
+ *
  * @param   jQuery.Event event            The change event
  * @param   CoffeeBuilderControl control  The sizer control
  * @param   String property               An optional CSS property for the control
@@ -87,14 +87,14 @@ CoffeeBuilderEvents.add('sizer_keyup', function(event, control, property, callba
  * @return  void
  */
 CoffeeBuilderEvents.add('sizer_reset', function(event, control, property, callback, message){
-  var 
+  var
     $field = $(event.currentTarget),
     oldvalue = $field.data('oldvalue') || parseInt(control.getCss(property), 10) || 0;
-  
+
   if(typeof message === 'string') {
      alert(message);
   }
-  
+
   $field.val(oldvalue);
-  return $.isFunction(callback) ? callback(oldvalue + 'px') : control.updateCss(property, oldvalue + 'px');  
+  return $.isFunction(callback) ? callback(oldvalue + 'px') : control.updateCss(property, oldvalue + 'px');
 });

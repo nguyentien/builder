@@ -1,10 +1,12 @@
 /**
  * A basic stylesheet representation.
  *
+ * @param   CoffeeBuilder breakpoint   The parent breakpoint
  * @return  void
  */
-var CoffeeBuilderStylesheet = function(rules) {
+var CoffeeBuilderStylesheet = function(breakpoint) {
   this.rules = {};
+  this.breakpoint = breakpoint;
 };
 CoffeeBuilderStylesheet.prototype = {
     constructor: CoffeeBuilderStylesheet
@@ -21,7 +23,7 @@ CoffeeBuilderStylesheet.prototype = {
       if(!this.rules.hasOwnProperty(selector)) {
         this.rules[selector] = {};
       }
-      
+
       this.rules[selector][property] = value;
     }
 
@@ -47,7 +49,7 @@ CoffeeBuilderStylesheet.prototype = {
         delete this.rules[selector][property];
       }
     }
-  
+
     /**
      * Removes all rules for a given selector.
      *
@@ -57,7 +59,7 @@ CoffeeBuilderStylesheet.prototype = {
   , removeRulesForSelector: function(selector) {
       delete this.rules[selector];
     }
-    
+
     /**
      * Clear all rules.
      *
@@ -65,10 +67,10 @@ CoffeeBuilderStylesheet.prototype = {
      */
   , clearRules: function() {
       this.rules = {};
-    }    
+    }
 
     /**
-     * Gets a plain object representation of all rules in the current 
+     * Gets a plain object representation of all rules in the current
      * stylesheet.
      *
      * @return  Object
@@ -76,23 +78,25 @@ CoffeeBuilderStylesheet.prototype = {
   , getRules: function() {
       return this.rules;
     }
-  
+
     /**
      * Gets a string representation of all rules in the current stylesheet.
      *
      * @return  string
-     */  
+     */
   , toString: function() {
-      var styles = '';
-      
+      var
+        styles = '',
+        pretab = '';
+
       $.each(this.rules, function(selector, properties){
-        styles += selector + '{' + "\n";
+        styles += pretab + selector + '{' + "\n";
         $.each(properties, function(property, value){
-          styles += '\t' + property + ':' + value + ';' + "\n";
+          styles += pretab + '\t' + property + ':' + value + ';' + "\n";
         });
-        styles += '}' + "\n";
+        styles += pretab + '}' + "\n";
       });
-      
+
       return $.trim(styles);
     }
 };

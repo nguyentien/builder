@@ -8,7 +8,7 @@ CoffeeBuilderControls.add('select_number', $.extend({}, CoffeeBuilderControls.ge
      *
      * @param   Object manifest  The JSON manifest to check.
      * @return  Boolean
-     */    
+     */
     check: function(manifest) {
       return manifest.type === 'select_number';
     }
@@ -21,15 +21,15 @@ CoffeeBuilderControls.add('select_number', $.extend({}, CoffeeBuilderControls.ge
      * this.props.data  // An object of data controlled by this element
      *
      * @return  void
-     */  
+     */
   , init: function(){
       if(this.manifest.options === undefined) {
         this.manifest.options = {};
       }
-      
+
       this.manifest.options.fix = 0;
       if(this.manifest.options.values === undefined) {
-        this.manifest.options.values = ['1','2','3','4','5','6','7','8','9','10'];   
+        this.manifest.options.values = ['1','2','3','4','5','6','7','8','9','10'];
       }
 
       if(this.manifest.options.min && this.manifest.options.max) {
@@ -41,26 +41,26 @@ CoffeeBuilderControls.add('select_number', $.extend({}, CoffeeBuilderControls.ge
           this.manifest.options.values.push(i.toFixed(this.manifest.options.fix).toString());
         }
       }
-      
+
       if(typeof this.manifest.options['default'] === "number") {
         this.manifest.options['default'] = this.manifest.options['default'].toFixed(this.manifest.options.fix).toString();
-      }      
-      
+      }
+
       CoffeeBuilderControls.getPristine('select').init.call(this);
     }
-    
+
     /**
      * Listener for when `this.props.data` changes.
      *
      * @param  string name  The name of the key that changed
      * @param  mixed value  The new value
      * @param  mixed
-     */    
+     */
   , dataChanged: function(name, value) {
       if(typeof value === 'number') {
         value = value.toString();
       }
-    
+
       if(name === this.data_name && this.fields.select.val() !== value) {
         this.fields.select.val(value);
       }

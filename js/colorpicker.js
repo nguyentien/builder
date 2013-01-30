@@ -7,7 +7,10 @@
  *
  */
 (function ($) {
-   var ColorPicker = function () {
+   var
+     pluginid = parseInt(Math.random() * 1000),
+     uuid = 0,
+     ColorPicker = function () {
       var
          ids = {},
          inAction,
@@ -23,7 +26,9 @@
             onSubmit: function () {},
             color: 'ff0000',
             livePreview: true,
-            flat: false
+            flat: false,
+            additionalDocuments: $(),
+            iframeFix: false
          },
          fillRGBFields = function  (hsb, cal) {
             var rgb = HSBToRGB(hsb);
@@ -118,6 +123,10 @@
                val: parseInt(field.val(), 10),
                preview: $(this).parent().parent().data('colorpicker').livePreview
             };
+
+            $(this).parent().parent().data('colorpicker').additionalDocuments.bind('mouseup', current, upIncrement);
+            $(this).parent().parent().data('colorpicker').additionalDocuments.bind('mousemove', current, moveIncrement);
+
             $(document).bind('mouseup', current, upIncrement);
             $(document).bind('mousemove', current, moveIncrement);
          },
@@ -131,6 +140,10 @@
          upIncrement = function (ev) {
             change.apply(ev.data.field.get(0), [true]);
             ev.data.el.removeClass('colorpicker_slider').find('input').focus();
+
+            ev.data.additionalDocuments.unbind('mouseup', upIncrement);
+            ev.data.additionalDocuments.unbind('mousemove', moveIncrement);
+
             $(document).unbind('mouseup', upIncrement);
             $(document).unbind('mousemove', moveIncrement);
             return false;
@@ -141,6 +154,10 @@
                y: $(this).offset().top
             };
             current.preview = current.cal.data('colorpicker').livePreview;
+
+            current.cal.data('colorpicker').additionalDocuments.bind('mouseup', current, upHue);
+            current.cal.data('colorpicker').additionalDocuments.bind('mousemove', current, moveHue);
+
             $(document).bind('mouseup', current, upHue);
             $(document).bind('mousemove', current, moveHue);
          },
@@ -158,6 +175,10 @@
          upHue = function (ev) {
             fillRGBFields(ev.data.cal.data('colorpicker').color, ev.data.cal.get(0));
             fillHexFields(ev.data.cal.data('colorpicker').color, ev.data.cal.get(0));
+
+            ev.data.cal.data('colorpicker').additionalDocuments.unbind('mouseup', upHue);
+            ev.data.cal.data('colorpicker').additionalDocuments.unbind('mousemove', moveHue);
+
             $(document).unbind('mouseup', upHue);
             $(document).unbind('mousemove', moveHue);
             return false;
@@ -168,6 +189,10 @@
                pos: $(this).offset()
             };
             current.preview = current.cal.data('colorpicker').livePreview;
+
+            current.cal.data('colorpicker').additionalDocuments.bind('mouseup', current, upSelector);
+            current.cal.data('colorpicker').additionalDocuments.bind('mousemove', current, moveSelector);
+
             $(document).bind('mouseup', current, upSelector);
             $(document).bind('mousemove', current, moveSelector);
          },
@@ -199,6 +224,10 @@
             );
             fillRGBFields(ev.data.cal.data('colorpicker').color, ev.data.cal.get(0));
             fillHexFields(ev.data.cal.data('colorpicker').color, ev.data.cal.get(0));
+
+            ev.data.cal.data('colorpicker').additionalDocuments.unbind('mouseup', upSelector);
+            ev.data.cal.data('colorpicker').additionalDocuments.unbind('mousemove', moveSelector);
+
             $(document).unbind('mouseup', upSelector);
             $(document).unbind('mousemove', moveSelector);
             return false;
@@ -233,10 +262,12 @@
             if (cal.data('colorpicker').onShow.apply(this, [cal.get(0)]) != false) {
                cal.show(0);
             }
+            cal.data('colorpicker').additionalDocuments.bind('mousedown', {cal: cal}, hide);
             $(document).bind('mousedown', {cal: cal}, hide);
 			cal.draggable({
 			 	handle: "#colorpicker_dialog_title",
-				containment:'window'
+				containment:'window',
+        iframeFix: cal.data('colorpicker').iframeFix
 			 });
 			cal.children().css("cursor","default");
             return false;
@@ -246,6 +277,7 @@
                if (ev.data.cal.data('colorpicker').onHide.apply(this, [ev.data.cal.get(0)]) != false) {
                   ev.data.cal.hide();
                }
+               ev.data.cal.data('colorpicker').additionalDocuments.unbind('mousedown', hide);
                $(document).unbind('mousedown', hide);
             }
 			$(window).trigger('resize');
@@ -255,7 +287,7 @@
                return true;
             }
             if (parentEl.contains) {
-				
+
 			  if(el.tagName == 'A')
 			  {
 				return false;
@@ -265,7 +297,7 @@
 				var ret = parentEl.contains(el);
 				return ret;
 			  }
-                
+
             }
             if ( parentEl.compareDocumentPosition ) {
                return !!(parentEl.compareDocumentPosition(el) & 16);
@@ -419,7 +451,7 @@
                if (!$(this).data('colorpickerId')) {
                   var options = $.extend({}, opt);
                   options.origColor = opt.color;
-                  var id = 'colorpicker_' + parseInt(Math.random() * 1000);
+                  var id = 'colorpicker_' + pluginid + '_' + uuid++;
                   $(this).data('colorpickerId', id);
                   var cal = $(tpl).attr('id', id);
                   if (options.flat) {

@@ -8,7 +8,7 @@ CoffeeBuilderControls.add('select_boolean', $.extend({}, CoffeeBuilderControls.g
      *
      * @param   Object manifest  The JSON manifest to check.
      * @return  Boolean
-     */    
+     */
     check: function(manifest) {
       return manifest.type === 'select_boolean';
     }
@@ -21,26 +21,26 @@ CoffeeBuilderControls.add('select_boolean', $.extend({}, CoffeeBuilderControls.g
      * this.props.data  // An object of data controlled by this element
      *
      * @return  void
-     */  
-  , init: function(){    
+     */
+  , init: function(){
       if(this.manifest.options === undefined) {
         this.manifest.options = {};
       }
-      
+
       if(this.manifest.options.values === undefined) {
         this.manifest.options.values = ['Yes', 'No'];
       }
 
       CoffeeBuilderControls.getPristine('select').init.call(this);
     }
-    
+
     /**
      * Listener for when `this.props.data` changes.
      *
      * @param  string name  The name of the key that changed
      * @param  mixed value  The new value
      * @param  mixed
-     */    
+     */
   , dataChanged: function(name, value) {
       var
         self = this,
@@ -64,7 +64,7 @@ CoffeeBuilderControls.add('select_boolean', $.extend({}, CoffeeBuilderControls.g
           self.fields.select.val(value);
         }
       }
-  
+
       return (!value || $.inArray(value.toString().toLowerCase(), false_values) !== -1) ? false : true;
     }
 }));

@@ -1,19 +1,19 @@
 /**
  * Control used for managing box-shadow properties.
- */  
+ */
 CoffeeBuilderControls.add('shadow', {
-  
+
     /**
      * Given a manifest, checks if this control is the appropriate type to
      * manage the properties specified in the manifest.
      *
      * @param   Object manifest  The JSON manifest to check.
      * @return  Boolean
-     */    
+     */
     check: function(manifest) {
       return CoffeeBuilderControl.getSelector(manifest).property === 'box-shadow';
     }
-    
+
     /**
      * Initializes the control by adding the following instance variables:
      *
@@ -21,11 +21,9 @@ CoffeeBuilderControls.add('shadow', {
      * this.fields   // hash of jQuery objects for all form fields in the control
      *
      * @return  void
-     */      
+     */
   , init: function() {
-      var
-        self = this,          
-        shadow = self.getCss();
+      var self = this;
 
       // Set the element
       self.$element = $(
@@ -39,7 +37,7 @@ CoffeeBuilderControls.add('shadow', {
         '</div>' +
         '<span class="shadow_label first">Alpha</span><span class="shadow_label">X</span><span class="shadow_label">Y</span><span class="shadow_label">Blur</span>'
       );
-      
+
       // Set the fields
       $.each(['checkbox','color','opacity','x','y','blur'], function(index, name){
         self.fields[name] = self.$element.find('input.shadow_' + name);
@@ -48,55 +46,74 @@ CoffeeBuilderControls.add('shadow', {
       // Set the title
       self.setTitle(self.$element.find('span:first'));
 
+      // Add checkbox events
+      self.fields.checkbox.change($.proxy(self.checkboxChange, self));
+
+      // Add value events
+      CoffeeBuilderEvents.get('colorpicker_initialize')(self, self.fields.color, undefined, {}, $.proxy(self.shadowChange, self));
+      $.each(self.fields, function(field_name, field) {
+        if(field_name !== 'checkbox' && field_name !== 'color') {
+          field.change($.proxy(self.sizerChange, self)).keyup($.proxy(self.sizerKeyup, self));
+        }
+      });
+
+      self.refresh();
+    }
+
+    /**
+     * Refreshes the control to reflect the current DOM value.
+     *
+     * @return  void
+     */
+  , refresh: function() {
+      var shadow = this.getCss();
+
       // Set defaults
       if(shadow && shadow !== 'none') {
-        self.fields.checkbox.attr('checked','checked');
-        
-        var hexa = self.getHexAlpha(shadow);
+        this.fields.checkbox.attr('checked','checked');
+
+        var hexa = this.getHexAlpha(shadow);
         if(hexa.hex)
         {
-          self.fields.color.val(hexa.hex);
-          self.fields.opacity.val(Math.round((hexa.alpha ? hexa.alpha : 1) * 100));
+          this.fields.opacity.val(Math.round((hexa.alpha ? hexa.alpha : 1) * 100));
+          CoffeeBuilderEvents.get('colorpicker_input_change')(hexa.hex, this, this.fields.color, undefined, function(){});
         }
 
         var match = shadow.match(/(\d+)px\s+(\d+)px\s+(\d+)px\s+(\d+)px/);
         if(match)
         {
-           self.fields.x.val(match[1]);
-           self.fields.y.val(match[2]);
-           self.fields.blur.val(match[3]);
-        }          
+           this.fields.x.val(match[1]);
+           this.fields.y.val(match[2]);
+           this.fields.blur.val(match[3]);
+        }
+      } else {
+        this.fields.checkbox.attr('checked', false);
       }
-      
-      // Add checkbox events
-      self.fields.checkbox.change($.proxy(self.checkboxChange, self));
-      CoffeeBuilderEvents.get('shadow_checkbox')(self, null, function(){});
-      
-      // Add value events
-      CoffeeBuilderEvents.get('colorpicker_initialize')(self, self.fields.color, undefined, {}, $.proxy(self.shadowChange, self));
-      $.each(self.fields, function(field_name, field) {
+
+      CoffeeBuilderEvents.get('shadow_checkbox')(this, null, function(){});
+      $.each(this.fields, function(field_name, field) {
         if(field_name !== 'checkbox' && field_name !== 'color') {
-          CoffeeBuilderEvents.get('initialize_sizers')(field.change($.proxy(self.sizerChange, self)).keyup($.proxy(self.sizerKeyup, self)));
+          CoffeeBuilderEvents.get('initialize_sizers')(field);
         }
       });
     }
-    
+
     /**
      * Event listener (proxy) for an input's `change()` event.
      *
      * @param  jQuery.Event event  The input's `change()` event.
      * @param  Boolean
-     */      
+     */
   , sizerChange: function(event) {
       return CoffeeBuilderEvents.get('sizer_change')(event, this, undefined, $.proxy(this.shadowChange, this));
     }
-    
+
     /**
      * Event listener (proxy) for an input's `keyup()` event.
      *
      * @param  jQuery.Event event  The input's `keyup()` event.
      * @param  Boolean
-     */  
+     */
   , sizerKeyup: function(event) {
       return CoffeeBuilderEvents.get('sizer_keyup')(event, this, undefined, $.proxy(this.shadowChange, this));
     }
@@ -109,14 +126,14 @@ CoffeeBuilderControls.add('shadow', {
   , shadowChange: function() {
       return CoffeeBuilderEvents.get('shadow_change')(this);
     }
-    
+
     /**
      * Event listener (proxy) for the checkbox's `change()` event.
      *
      * @param  jQuery.Event event  The checkbox's `change()` event.
      * @param  Boolean
-     */      
+     */
   , checkboxChange: function(event) {
-      return CoffeeBuilderEvents.get('shadow_checkbox')(this);      
+      return CoffeeBuilderEvents.get('shadow_checkbox')(this);
     }
 });
