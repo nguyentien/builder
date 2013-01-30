@@ -2,23 +2,23 @@
 module.exports = function(grunt) {
 
   var src_files = [
-    'src/intro.js',
-    'src/util.js',
-    'src/collection.js',
-    'src/notifications.js',
-    'src/stylesheet.js',
-    'src/builder.js',
-    'src/breakpoint.js',
-    'src/panel.js',
-    'src/sub_panel.js',
-    'src/control.js',
-    'src/control_group.js',
-    'src/controls.js',
-    'src/controls/*.js',
-    'src/events.js',
-    'src/events/*.js',
-    'src/api.js',
-    'src/outro.js'
+    'source/intro.js',
+    'source/util.js',
+    'source/collection.js',
+    'source/notifications.js',
+    'source/stylesheet.js',
+    'source/builder.js',
+    'source/breakpoint.js',
+    'source/panel.js',
+    'source/sub_panel.js',
+    'source/control.js',
+    'source/control_group.js',
+    'source/controls.js',
+    'source/controls/*.js',
+    'source/events.js',
+    'source/events/*.js',
+    'source/api.js',
+    'source/outro.js'
   ];
 
   // Project configuration.

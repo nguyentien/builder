@@ -83,7 +83,7 @@ var CoffeeBuilderControls = {
      */
   , getPristine: function(name) {
       if(!$.isPlainObject(this.pristine[name])) {
-        $.error('Invalid index provided: ' + name);
+        //$.error('Invalid index provided: ' + name);
       }
 
       return this.pristine[name];

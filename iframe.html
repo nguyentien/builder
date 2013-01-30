@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+   <meta charset="utf-8">
+   <title>CoffeeBuilder</title>
+   <style>
+
+      body {
+         margin:0;
+         padding:0;
+         background-color:#fff;
+      }
+
+      #container {
+         width:80%;
+         border-bottom-style:double;
+      }
+
+      #header {
+         background-color:#ffa500;
+      }
+
+      #header h1 {
+         margin:0;
+      }
+
+      #menu {
+         background-color:#ffd700;
+         height:200px;
+         width:20%;
+         float:left;
+      }
+
+      #content {
+         background-color:#eee;
+         height:200px;
+         width:80%;
+         float:left;
+      }
+
+      #footer {
+         background-color:#ffa500;
+         clear:both;
+         text-align:center;
+      }
+
+      #cactus p {
+         background-color:red;
+      }
+
+      h1:hover {
+         text-decoration:underline;
+      }
+
+   </style>
+</head>
+<body>
+<div id="container">
+   <div id="header">
+      <h1>Main Title of Web Page</h1>
+   </div>
+
+   <div id="menu">
+      <b>Menu</b><br>
+      HTML<br>
+      CSS<br>
+      JavaScript
+   </div>
+
+   <div id="content">
+      Content goes here
+   </div>
+
+   <div id="footer">
+      Copyright &copy; coffeecup.com
+   </div>
+</div>
+<script type="text/javascript" src="js/jquery-1.8.2.min.js"></script>
+<script type="text/javascript">
+$(function(){
+   if ($.isFunction(window.parent.coffeeBuilderInit)) {
+      window.parent.coffeeBuilderInit();
+   }
+});
+</script>
+</body>
+</html>
